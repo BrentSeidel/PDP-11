@@ -27,7 +27,7 @@ strlen::
 	MOV 6(SP), R0	; Get the address of the string
 	INC R0		; Point to the length
 	MOVB (R0), R1	; Get the length
-	BIC #17600, R1	; Clear any sign bits
+	BIC #byteh, R1	; Clear any sign bits
 	MOV R1, 6(SP)	; Save length on stack
 	MOV (SP)+, R1
 	MOV (SP)+, R0
@@ -45,7 +45,7 @@ strmax::
 	MOV R1, -(SP)
 	MOV 6(SP), R0
 	MOVB (R0), R1
-	BIC #17600, R1
+	BIC #byteh, R1
 	MOV R1, 6(SP)
 	MOV (SP)+, R1
 	MOV (SP)+, R0
@@ -68,22 +68,62 @@ trimts::
 	MOV 8.(SP), R0
 	INC R0
 	MOVB (R0), R1
-	BIC #17600, R1
+	BIC #byteh, R1
 	INC R0
 	ADD R1, R0	; Point to end of string
 ;
 1$:	MOVB -(R0), R2
 	CMPB #33., R2
 	BHI 2$		; ASCII 32 or less
-	CMPB #126., R2
-	BLO 2$		; ASCII 127 or higher
-	BR 3$		; Printable character found
+	CMPB #127., R2
+	BHI 3$		; Printable character found
 2$:	SOB R1, 1$	; Loop and try again
 ;
 3$:	MOV 8.(SP), R0
 	INC R0
 	MOVB R1, (R0)
 ;
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+
+	.SBTTL TRIMLS - Trim leading whitespace from a string
+;
+;  Modifies the passed string to remove any whitespace at the beginning
+;  of the string.  Similar to TRIMTS
+;
+str = 10.
+trimls::
+	MOV R0, -(SP)	; Destination address
+	MOV R1, -(SP)	; Length
+	MOV R2, -(SP)	; Source address
+	MOV R3, -(SP)	; Character to test
+;
+	MOV str(SP), R0
+	INC R0
+	MOVB (R0), R1	; Get string length
+	BIC #byteh, R1
+	MOV R0, R2	; R2 points to start of string
+	INC R2
+;
+;  Now find the first non-whitespace character
+;
+1$:	MOVB (R2)+, R3
+	CMPB #33., R3
+	BHI 2$		; ASCII 32 or less
+	CMPB #127., R3
+	BHI 3$		; ASCII 126 or less
+2$:	SOB R1, 1$
+;
+3$:	DEC R2		; Adjust source
+	MOVB R1, (R0)	; Update string length
+	INC R0
+;
+4$:	MOVB (R2)+, (R0)+	; Move the string up
+	SOB R1, 4$
+
+	MOV (SP)+, R3
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
@@ -132,7 +172,7 @@ octstr::
 ;
 	MOV str(SP), R0		; Get address of string
 	MOVB (R0), R1		; Get string max size
-	BIC #17600, R1		; Clear any sign bits
+	BIC #byteh, R1		; Clear any sign bits
 	CMPB #6, R1		; Don't transfer more than max
 	BHI 2$
 	MOV #6, R1		; R1 is number of chars
@@ -173,7 +213,7 @@ decstr::
 ;
 	MOV str(SP), R0		; Get address of string
 	MOVB (R0), R1		; Get string max size
-	BIC #177400, R1		; Clear any sign bits
+	BIC #byteh, R1		; Clear any sign bits
 	CMPB #5, R1		; Make sure not to transfer any more
 	BHI 2$			; than the max size
 	MOV #5, R1
@@ -205,7 +245,7 @@ hexstr::
 ;  Convert number to local buffer
 ;
 1$:	MOV R0, R1
-	BIC #177760, R1		; Least 4 bits
+	BIC #byteh, R1		; Least 4 bits
 	MOVB numtbl(R1), -(R2)	; Copy ASCII digit to buffer
 	ASH #-4, R0		; Shift out least octal digit
 	BIC #170000, R0		; and clear sign bits
@@ -215,7 +255,7 @@ hexstr::
 ;
 	MOV str(SP), R0		; Address of string
 	MOVB (R0), R1		; Max size of string
-	BIC #177400, R1		; Clear any sign bits
+	BIC #byteh, R1		; Clear any sign bits
 	CMPB #4, R1		; Make sure not to transfer
 	BHI 2$			; than the max size
 	MOV #4, R1
@@ -301,7 +341,7 @@ src = 18.
 	ADD #2, R0
 	ADD R2, R0		; Point to source start
 	ADD #2, R1		; Point to dest start
-	BIC #177400, R3		; Clear any high bits in count
+	BIC #byteh, R3		; Clear any high bits in count
 3$:	MOVB (R0)+, (R1)+	; Copy
 	SOB R3, 3$
 	JMP 100$
@@ -321,4 +361,4 @@ src = 18.
 	RTS PC
 ;
 	.END
-                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                                    
