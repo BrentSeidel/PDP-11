@@ -1,0 +1,211 @@
+;
+;  This file contains some routines to convert between numbers and strings.
+;
+;	.INCLUDE /MACROS.MAC/
+	.TITLE STRNUM - Routines to convert between strings and numbers
+	.IDENT "X0.00"
+;
+;  The data structure for a string is defined as follows:
+;  str:  byte max - Maximum length of the string.  This should never change
+;        byte len - Current length of the string.  Should be <= max
+;        bytes buff - Buffer of max bytes containing the string.
+;
+;  Note that in general, if the destination is not large enough to hold
+;  a string transfer, the destination will hold a truncated value.
+;
+	.PSECT STR,SAV,CON,GBL
+;
+;  The following three functions convert an unsigned 16 bit integer to a
+;  string in octal, decimal, or hexidecimal representation.  They are all
+;  called in a similar fashion:
+;  MOV str, -(SP)
+;  MOV num, -(SP)
+;  JSR PC, xxxstr
+;  ADD #4, SP
+;
+;  Note that if the destination string is not long enough to contain the
+;  full converted number, it will be truncated.
+;
+	.SBTTL OCTSTR - Convert a number to an octal string
+;
+;  Converts an integer value to a string containing the octal representation
+;
+num = 10.	; Stack offset for number
+str = 12.	; Stack offset for string pointer
+octstr::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV R3, -(SP)
+;
+;  Prepare to convert number
+;
+	MOV num(SP), R0		; Get the number passed
+	MOV #numbuf, R2		; Address of destination buffer
+	ADD #16., R2		; Point to end of buffer
+	MOV #6, R3		; Loop count limit
+;
+;  Convert number to local buffer
+;
+1$:	MOV R0, R1
+	BIC #177770, R1		; Least three bits
+	MOVB numtbl(R1), -(R2)	; Copy ASCII digit to buffer
+	ASH #-3, R0		; Shift out least octal digit
+	BIC #160000, R0		; And clear any sign bits
+	SOB R3, 1$		; Otherwise loop again
+;
+; Move to string (at this point, R2 points to the converted number)
+;
+	MOV str(SP), R0		; Get address of string
+	MOVB (R0), R1		; Get string max size
+	BIC #byteh, R1		; Clear any sign bits
+	CMPB #6, R1		; Don't transfer more than max
+	BHI 2$
+	MOV #6, R1		; R1 is number of chars
+
+2$:	INC R0			; Point to string length
+	MOVB R1, (R0)
+	INC R0			; Point to string buffer
+
+3$:	MOVB (R2)+, (R0)+
+	SOB R1, 3$
+	JMP clnup
+;
+;  Converts an integer value to a string containing the decimal represenation
+;
+decstr::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV R3, -(SP)
+;
+;  Prepare to convert number
+;
+	MOV num(SP), R0		; Get number passed
+	MOV #numbuf, R2		; Address of destination buffer
+	ADD #16., R2		; Point to end of destination
+	MOV #5, R3		; Loop count
+;
+;  Convert number to local buffer
+;
+1$:	MOV R0, R1		; For DIV, R0/R1 is treated as a
+	XOR R0, R0		; 32 bit number so this get it in place
+	DIV #10., R0
+	MOVB numtbl(R1), -(R2)	; Add digit to buffer
+	SOB R3, 1$
+;
+;  Now R2 points to the converted number.  Mov to the destination
+;  string
+;
+	MOV str(SP), R0		; Get address of string
+	MOVB (R0), R1		; Get string max size
+	BIC #byteh, R1		; Clear any sign bits
+	CMPB #5, R1		; Make sure not to transfer any more
+	BHI 2$			; than the max size
+	MOV #5, R1
+
+2$:	INC R0			; Point to string length
+	MOVB R1, (R0)		; Set string length
+	INC R0			; Point to string buffer
+
+3$:	MOVB (R2)+, (R0)+	; Copy the data
+	SOB R1, 3$
+	JMP clnup
+;
+;  Convert an integer value to a string containing the hexidecimal
+;  representation.
+;
+hexstr::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV R3, -(SP)
+;
+;  Prepare to convert number
+;
+	MOV num(sp), R0		; Get number passed
+	MOV #numbuf, R2		; Address of destination
+	ADD #16., R2		; Point to end of destination
+	MOV #4, R3		; Loop count
+;
+;  Convert number to local buffer
+;
+1$:	MOV R0, R1
+	BIC #177760, R1		; Least 4 bits
+	MOVB numtbl(R1), -(R2)	; Copy ASCII digit to buffer
+	ASH #-4, R0		; Shift out least octal digit
+	BIC #170000, R0		; and clear sign bits
+	SOB R3, 1$		; Loop until done
+;
+;  Copy the string
+;
+	MOV str(SP), R0		; Address of string
+	MOVB (R0), R1		; Max size of string
+	BIC #byteh, R1		; Clear any sign bits
+	CMPB #4, R1		; Make sure not to transfer
+	BHI 2$			; than the max size
+	MOV #4, R1
+
+2$:	INC R0			; Point to string lenght
+	MOVB R1, (R0)		; Set string length
+	INC R0			; Point to string buffer
+
+3$:	MOVB (R2)+, (R0)+	; Copy data
+	SOB R1, 3$
+	JMP clnup
+;
+;  Common cleanup to restore registers and return from numeric
+;  conversion routines.
+;
+clnup:	MOV (SP)+, R3
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+
+;
+;  The following routines convert strings containing digits to
+;  numbers.  Conversion stop when an invalid digit is detected.
+;  If the numbers are two big for 16 bits, only the low order
+;  16 bits are returned.
+;  The calling sequence is:
+;  MOV str, -(SP)
+;  JSR PC, strxxx
+;  MOV (SP)+, num
+;
+str = 10.
+strdec::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV R3, -(SP)
+;
+	MOV str(SP), R0
+	INC R0
+	MOVB (R0), R1
+	BIC #byteh, R1	; Length of string
+	INC R0		; Character pointer
+	XOR R3, R3	; Result value
+;
+1$:	MOVB (R0)+, R2	; Character to test
+	SUB #'0, R2
+	CMPB #10., R2
+	BLOS 2$
+	MUL #10., R3
+	ADD R2, R3
+	SOB R1, 1$
+;
+2$:
+	MOV R3, str(SP)
+	JMP clnup
+;
+;	MOV (SP)+, R3
+;	MOV (SP)+, R2
+;	MOV (SP)+, R1
+;	MOV (SP)+, R0
+;	RTS PC
+;
+;	text msg, <Converting string |>
+;	text vbar, <|>
+;	text res, <Result is >
+	.END
