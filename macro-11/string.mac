@@ -286,4 +286,66 @@ src = 18.
 	MOV (SP)+, R0
 	RTS PC
 ;
+;  Convert strings to upper or lower case.  Called as
+;  MOV str, -(SP)
+;  JSR PC, xxcase
+;  ADD #2, SP
+;
+	.SBTTL UPCASE - Convert a string to upper case
+;  Convert to upper case in place
+str = 8.
+upcase::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+;
+	MOV str(SP), R0		; Address of string
+	INC R0
+	MOVB (R0), R1		; Length of string
+	BIC #byteh, R1
+	INC R0
+;
+1$:	MOVB (R0), R2		; Character to check
+	CMPB #'a, R2
+	BHI 2$
+	CMPB #'z, R2
+	BLO 2$
+	SUB #'a-'A, R2
+	MOVB R2, (R0)
+2$:	INC R0
+	SOB R1, 1$
+;
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+;
+	.SBTTL LOCASE - Convert a string to lower case
+;  Convert to lowercase in place
+locase::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+;
+	MOV str(SP), R0		; Address of string
+	INC R0
+	MOVB (R0), R1		; Length of string
+	BIC #byteh, R1
+	INC R0
+;
+1$:	MOVB (R0), R2		; Character to check
+	CMPB #'A, R2
+	BHI 2$
+	CMPB #'Z, R2
+	BLO 2$
+	ADD #'a-'A, R2
+	MOVB R2, (R0)
+2$:	INC R0
+	SOB R1, 1$
+;
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+;
 	.END

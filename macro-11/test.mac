@@ -20,6 +20,15 @@ start::
 	puts #str
 	putsln #vbar
 ;
+	upcase #str
+	puts #msg2
+	puts #str
+	putsln #vbar
+	locase #str
+	puts #msg2
+	puts #str
+	putsln #vbar
+;
 	puts #msg4		; Print the string's max len
 	strmax #str, R0
 	putdec R0
@@ -31,23 +40,24 @@ start::
 ;
 	puts #entnum
 	gets #str
-	strdec #str, R0
-	puts #msg3
-	putdec R0
-	JSR PC, newline
+	stroct #str, R1
+	JSR PC, putnum
+;
+	puts #entnum
+	gets #str
+	strdec #str, R1
+	JSR PC, putnum
+;
+	puts #entnum
+	gets #str
+	strhex #str, R1
+	JSR PC, putnum
 ;
 	.SBTTL Loop - To print numbers
-;	MOV #20., R0
+	MOV #20., R0
 	MOV #-10., R1
-l1:	puts #msg3
 ;
-	putoct R1
-	puts #oct
-	putdec R1
-	puts #dec
-	puthex R1
-	putsln #hex
-;
+l1:	JSR PC, putnum
 	ADD #1, R1
 	SOB R0, l1
 ;
@@ -84,6 +94,18 @@ l1:	puts #msg3
 	substr #hello, #str, #6, #5
 	putsln #str
 	.EXIT
+;
+;  Prints a number in octal, decimal, or hex.  The number is
+;  passed in R1
+;
+putnum:	puts #msg3
+	putoct R1
+	puts #oct
+	putdec R1
+	puts #dec
+	puthex R1
+	putsln #hex
+	RTS PC
 
 	.SBTTL Data - Space for text messages and strings
 	.PSECT DATA,CON

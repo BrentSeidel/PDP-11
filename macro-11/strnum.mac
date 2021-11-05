@@ -154,16 +154,6 @@ hexstr::
 	SOB R1, 3$
 	JMP clnup
 ;
-;  Common cleanup to restore registers and return from numeric
-;  conversion routines.
-;
-clnup:	MOV (SP)+, R3
-	MOV (SP)+, R2
-	MOV (SP)+, R1
-	MOV (SP)+, R0
-	RTS PC
-
-;
 ;  The following routines convert strings containing digits to
 ;  numbers.  Conversion stop when an invalid digit is detected.
 ;  If the numbers are two big for 16 bits, only the low order
@@ -174,6 +164,34 @@ clnup:	MOV (SP)+, R3
 ;  MOV (SP)+, num
 ;
 str = 10.
+;
+;  Octal conversion
+stroct::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV R3, -(SP)
+;
+	MOV str(SP), R0
+	INC R0
+	MOVB (R0), R1
+	BIC #byteh, R1	; Length of string
+	INC R0		; Character pointer
+	CLR R3		; Result value
+;
+1$:	MOVB (R0)+, R2	; Character to test
+	SUB #'0, R2
+	CMPB #8., R2
+	BLOS 2$
+	MUL #8., R3
+	ADD R2, R3
+	SOB R1, 1$
+;
+2$:	MOV R3, str(SP)
+	JMP clnup
+;
+;  Decimal Conversion
+;
 strdec::
 	MOV R0, -(SP)
 	MOV R1, -(SP)
@@ -185,7 +203,7 @@ strdec::
 	MOVB (R0), R1
 	BIC #byteh, R1	; Length of string
 	INC R0		; Character pointer
-	XOR R3, R3	; Result value
+	CLR R3		; Result value
 ;
 1$:	MOVB (R0)+, R2	; Character to test
 	SUB #'0, R2
@@ -199,11 +217,44 @@ strdec::
 	MOV R3, str(SP)
 	JMP clnup
 ;
-;	MOV (SP)+, R3
-;	MOV (SP)+, R2
-;	MOV (SP)+, R1
-;	MOV (SP)+, R0
-;	RTS PC
+;  Hexiecimal Conversion
+;
+strhex::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV R3, -(SP)
+;
+	MOV str(SP), R0
+	INC R0
+	MOVB (R0), R1
+	BIC #byteh, R1	; Length of string
+	INC R0		; Character pointer
+	CLR R3		; Result value
+;
+1$:	MOVB (R0)+, R2	; Character to test
+	SUB #'0, R2
+	CMPB #10., R2	; Check for digits
+	BHI 2$
+	SUB #'A-'0, R2	; Check for A-F
+	CMPB #6, R2
+	BLOS 3$
+	ADD #10., R2
+2$:	MUL #16., R3
+	ADD R2, R3
+	SOB R1, 1$
+;
+3$:	MOV R3, str(SP)
+	JMP clnup
+;
+;  Common cleanup to restore registers and return from numeric
+;  conversion routines.
+;
+clnup:  MOV (SP)+, R3
+        MOV (SP)+, R2
+        MOV (SP)+, R1
+        MOV (SP)+, R0
+        RTS PC
 ;
 ;	text msg, <Converting string |>
 ;	text vbar, <|>

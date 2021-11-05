@@ -85,7 +85,7 @@ lbl:	.BYTE $1
 	.RESTORE
 .ENDM	text
 ;
-;  Trim unprintable characters from the end of a string.
+;  Trim whitespace characters from the end of a string.
 ;
 .MACRO	trimts str
 	MOV str, -(SP)
@@ -153,12 +153,26 @@ lbl:	.BYTE $1
 ;  Convert strings containing numbers to unsigned
 ;  integers in octal, decimal, and hexidecimal
 ;
+.MACRO	stroct str, num
+	MOV str, -(SP)
+	JSR PC, stroct
+	MOV (SP)+, num
+.ENDM	stroct
+
 .MACRO	strdec str, num
 	MOV str, -(SP)
 	JSR PC, strdec
 	MOV (SP)+, num
 .ENDM	strdec
 
+.MACRO	strhex str, num
+	MOV str, -(SP)
+	JSR PC, strhex
+	MOV (SP)+, num
+.ENDM	strhex
+;
+;  Extract a substring from a string.
+;
 .MACRO	substr src, dest, start, count
 	MOV src, -(SP)
 	MOV dest, -(SP)
@@ -167,5 +181,17 @@ lbl:	.BYTE $1
 	JSR PC, substr
 	ADD #8., SP
 .ENDM	substr
+;
+;  Convert strings to upper or lower case
+;
+.MACRO	upcase str
+	MOV str, -(SP)
+	JSR PC, upcase
+	ADD #2, SP
+.ENDM	upcase
 
-
+.MACRO	locase str
+	MOV str, -(SP)
+	JSR PC, locase
+	ADD #2, SP
+.ENDM	locase
