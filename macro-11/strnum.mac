@@ -15,6 +15,11 @@
 ;
 	.PSECT STR,SAV,CON,GBL
 ;
+;  Defined flag values
+flgneg = 1	; Negative flag
+flgsgn = 2	; Convert signed numbers
+flglz  = 4	; Produce leading zeros
+;
 ;  The following three functions convert an unsigned 16 bit integer to a
 ;  string in octal, decimal, or hexidecimal representation.  They are all
 ;  called in a similar fashion:
@@ -178,6 +183,17 @@ stroct::
 	BIC #byteh, R1	; Length of string
 	INC R0		; Character pointer
 	CLR R3		; Result value
+	CMPB #0, R1	; If length is zero
+	BEQ 2$		; Just return zero
+	CMPB #'-, (R0)	; Is first character a -
+	BNE 10$
+	BIS #flgneg, @#flags	; Set the negative flag
+	INC R0
+	BR 1$
+10$:	BIC #flgneg, @#flags	; Clear the negative flag
+	CMPB #'+, (R0)	; Is first character a +
+	BNE 1$
+	INC R0		; Just ignore it
 ;
 1$:	MOVB (R0)+, R2	; Character to test
 	SUB #'0, R2
@@ -187,8 +203,11 @@ stroct::
 	ADD R2, R3
 	SOB R1, 1$
 ;
-2$:	MOV R3, str(SP)
-	JMP clnup
+2$:	BIT #flgneg, @#flags	; Is number negative
+	BEQ 3$
+	NEG R3		; Negative it
+3$:	MOV R3, str(SP)
+	BR clnup
 ;
 ;  Decimal Conversion
 ;
@@ -204,6 +223,17 @@ strdec::
 	BIC #byteh, R1	; Length of string
 	INC R0		; Character pointer
 	CLR R3		; Result value
+	CMPB #0, R1	; If length is zero
+	BEQ 2$		; Just return zero
+	CMPB #'-, (R0)	; Is first character a -
+	BNE 10$
+	BIS #flgneg, @#flags	; Set the negative flag
+	INC R0
+	BR 1$
+10$:	BIC #flgneg, @#flags	; Clear the negaive flag
+	CMPB #'+, (R0)	; Is first character a +
+	BNE 1$
+	INC R0		; Just ignore it
 ;
 1$:	MOVB (R0)+, R2	; Character to test
 	SUB #'0, R2
@@ -213,9 +243,11 @@ strdec::
 	ADD R2, R3
 	SOB R1, 1$
 ;
-2$:
-	MOV R3, str(SP)
-	JMP clnup
+2$:	BIT #flgneg, @#flags	; Is number negative?
+	BEQ 3$
+	NEG R3		; Negative it
+3$:	MOV R3, str(SP)
+	BR clnup
 ;
 ;  Hexiecimal Conversion
 ;
@@ -231,6 +263,17 @@ strhex::
 	BIC #byteh, R1	; Length of string
 	INC R0		; Character pointer
 	CLR R3		; Result value
+	CMPB #0, R1	; If length is zero
+	BEQ 3$		; Just return zero
+	CMPB #'-, (R0)	; Is the first character a -
+	BNE 10$
+	BIS #flgneg, @#flags	; Set the negative flag
+	INC R0
+	BR 1$
+10$:	BIC #flgneg, @#flags	; Clear the negative flag
+	CMPB #'+, (R0)	; Is the first character a +
+	BNE 1$
+	INC R0		; Just ignore it
 ;
 1$:	MOVB (R0)+, R2	; Character to test
 	SUB #'0, R2
@@ -244,8 +287,11 @@ strhex::
 	ADD R2, R3
 	SOB R1, 1$
 ;
-3$:	MOV R3, str(SP)
-	JMP clnup
+3$:	BIT #flgneg, @#flags	; Is the number negative
+	BEQ 4$
+	NEG R3		; Negative it
+4$:	MOV R3, str(SP)
+	BR clnup
 ;
 ;  Common cleanup to restore registers and return from numeric
 ;  conversion routines.
@@ -256,6 +302,18 @@ clnup:  MOV (SP)+, R3
         MOV (SP)+, R0
         RTS PC
 ;
+	.PSECT DATA LCL,REL,CON
+;
+;  Flags for number conversions.
+;  1 = Number is negative
+;  2 = Convert numbers as signed
+;  4 = Convert numbers with leading zeros
+;  Others are currently unused.
+;
+flags:	.WORD	0
+;
+;	text neg, <The number is negative>
+;	text pos, <The number is positive>
 ;	text msg, <Converting string |>
 ;	text vbar, <|>
 ;	text res, <Result is >
