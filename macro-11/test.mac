@@ -16,9 +16,10 @@ start::
 	puts #enttxt		; Ask for a string
 	gets #str		; Get the string
 	trim #str,ts=1,lz=1,tz=1,ls=1	; Trim the string
-	puts #msg2		; Print the string
-	puts #str
-	putsln #vbar
+	cpstr #msg2, #outbuf
+	appstr #str, #outbuf
+	appstr #vbar, #outbuf
+	putsln #outbuf		; Print the string
 ;
 	upcase #str
 	puts #msg2
@@ -93,18 +94,30 @@ l1:	JSR PC, putnum
 	JSR PC, newline
 	substr #hello, #str, #6, #5
 	putsln #str
+;
+	cpstr #hello, #str
+	putsln #str
+	cpstr #hello, #short1
+	putsln #short1
 	.EXIT
 ;
 ;  Prints a number in octal, decimal, or hex.  The number is
 ;  passed in R1
 ;
-putnum:	puts #msg3
-	putoct R1
-	puts #oct
-	putdec R1
-	puts #dec
-	puthex R1
-	putsln #hex
+putnum:	cpstr #msg3, #outbuf
+	octstr #str, R1
+	trim #str, lz=1
+	appstr #str, #outbuf
+	appstr #oct, #outbuf
+	decstr #str, R1
+	trim #str, lz=1
+	appstr #str, #outbuf
+	appstr #dec, #outbuf
+	hexstr #str, R1
+	trim #str, lz=1
+	appstr #str, #outbuf
+	appstr #hex, #outbuf
+	putsln #outbuf
 	RTS PC
 
 	.SBTTL Data - Space for text messages and strings
@@ -114,6 +127,7 @@ putnum:	puts #msg3
 	string short1, 5
 	string short2, 4
 	string short3, 3
+	string outbuf, 80.
 	text msg2c <The truncated number is |>
 	text enttxt, <Enter text: >
 	text msg2, <You entered: |>

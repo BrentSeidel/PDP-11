@@ -182,6 +182,22 @@ lbl:	.BYTE $1
 	ADD #8., SP
 .ENDM	substr
 ;
+;  Other string manipulation
+;
+.MACRO	cpstr src, dest
+	MOV src, -(SP)
+	MOV dest, -(SP)
+	JSR PC, cpstr
+	ADD #4, SP
+.ENDM	cpstr
+
+.MACRO	appstr src, dest
+	MOV src, -(SP)
+	MOV dest, -(SP)
+	JSR PC, appstr
+	ADD #4, SP
+.ENDM	appstr
+;
 ;  Convert strings to upper or lower case
 ;
 .MACRO	upcase str

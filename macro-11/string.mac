@@ -1,7 +1,7 @@
 ;
 ;  This file contains some routines that work on strings.
 ;
-;	.INCLUDE /MACROS.MAC/
+	.INCLUDE /MACROS.MAC/
 	.TITLE STRING - Collection of routines to work on strings
 	.IDENT "X0.00"
 ;
@@ -71,6 +71,8 @@ trimts::
 	INC R0
 	MOVB (R0), R1
 	BIC #byteh, R1
+	CMPB #0, R1	; If string is 0 length
+	BEQ 4$		; Just exit
 	INC R0
 	ADD R1, R0	; Point to end of string
 ;
@@ -85,7 +87,7 @@ trimts::
 	INC R0
 	MOVB R1, (R0)
 ;
-	MOV (SP)+, R2
+4$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
 	RTS PC
@@ -105,6 +107,8 @@ trimtz::
 	INC R0
 	MOVB (R0), R1
 	BIC #byteh, R1
+	CMPB #0, R1	; If sring lenght is 0
+	BEQ 4$		; Just exit
 	INC R0
 	ADD R1, R0	; Point to end of string
 ;
@@ -117,7 +121,7 @@ trimtz::
 	INC R0
 	MOVB R1, (R0)
 ;
-	MOV (SP)+, R2
+4$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
 	RTS PC
@@ -138,6 +142,8 @@ trimls::
 	INC R0
 	MOVB (R0), R1	; Get string length
 	BIC #byteh, R1
+	CMPB #0, R1	; If string length is 0
+	BEQ 5$		; Just exit
 	MOV R0, R2	; R2 points to start of string
 	INC R2
 ;
@@ -152,12 +158,14 @@ trimls::
 ;
 3$:	DEC R2		; Adjust source
 	MOVB R1, (R0)	; Update string length
+	CMPB #0, R1	; If length is 0
+	BEQ 5$		; Exit
 	INC R0
 ;
 4$:	MOVB (R2)+, (R0)+	; Move the string up
 	SOB R1, 4$
-
-	MOV (SP)+, R3
+;
+5$:	MOV (SP)+, R3
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
@@ -180,15 +188,24 @@ trimlz::
 	INC R0
 	MOVB (R0), R1	; Get string length
 	BIC #byteh, R1
+	CMPB #0, R1	; If string length is 0
+	BEQ 5$		; Just exit
 	MOV R0, R2	; R2 points to start of string
 	INC R2
 ;
-;  Now find the first zero character
+;  Now find the first non-zero character
 ;
 1$:	MOVB (R2)+, R3
 	CMPB #'0, R3
 	BNE 2$		; Not a zero
 	SOB R1, 1$
+;
+	CMPB #0, R1	; If result length is not zero
+	BNE 2$		; Process string
+	MOVB #1, (R0)	; If all zeros, set length to 1
+	INC R0
+	MOVB #'0, (R0)	; Containing just a "0"
+	BR 5$
 ;
 2$:	DEC R2		; Adjust source
 	MOVB R1, (R0)	; Update string length
@@ -196,8 +213,8 @@ trimlz::
 ;
 4$:	MOVB (R2)+, (R0)+	; Move the string up
 	SOB R1, 4$
-
-	MOV (SP)+, R3
+;
+5$:	MOV (SP)+, R3
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
@@ -270,7 +287,7 @@ src = 18.
 	BIC #byteh, R3		; Clear any high bits in count
 3$:	MOVB (R0)+, (R1)+	; Copy
 	SOB R3, 3$
-	JMP 100$
+	BR 100$
 ;
 ;  Set destination to be a 0 length string
 ;
@@ -302,6 +319,8 @@ upcase::
 	MOV str(SP), R0		; Address of string
 	INC R0
 	MOVB (R0), R1		; Length of string
+	CMPB #0, R1		; Check if length is zero
+	BEQ 3$			; If so, do nothing
 	BIC #byteh, R1
 	INC R0
 ;
@@ -315,7 +334,7 @@ upcase::
 2$:	INC R0
 	SOB R1, 1$
 ;
-	MOV (SP)+, R2
+3$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
 	RTS PC
@@ -330,6 +349,8 @@ locase::
 	MOV str(SP), R0		; Address of string
 	INC R0
 	MOVB (R0), R1		; Length of string
+	CMPB #0, R1		; Check if length is zero
+	BEQ 3$			; If so, do nothing
 	BIC #byteh, R1
 	INC R0
 ;
@@ -343,6 +364,96 @@ locase::
 2$:	INC R0
 	SOB R1, 1$
 ;
+3$:	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+;
+	.SBTTL CPSTR - Copy one string to another.
+;  Copies the contents of one string to another string.  The old contents of
+;  the destination string are lost.  If the destination is too short to hold
+;  the source, it is truncated to fit.
+;  Called as
+;  MOV src, -(SP)
+;  MOV dest, -(SP)
+;  JSR PC, CPSTR
+;  ADD #4, SP
+src = 10.
+dest = 8.
+CPSTR::	MOV R0, -(SP)	; Source string
+	MOV R1, -(SP)	; Destination string
+	MOV R2, -(SP)	; Bytes to move
+;
+	MOV src(SP), R0
+	MOV dest(SP), R1
+	INC R0
+	MOVB (R0), R2	; Number of bytes
+	CMPB (R1), R2
+	BHIS 1$
+	MOVB (R1), R2	; Adjust if needed
+;
+1$:	INC R1
+	MOVB R2, (R1)	; Set length of destination
+	CMPB #0, R2	; If the length is zero
+	BEQ 3$		; There's nothing more to do
+	INC R0		; Set pointers to starts of
+	INC R1		; buffers
+;
+2$:	MOVB (R0)+, (R1)+
+	SOB R2, 2$
+;
+3$:	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+;
+	.SBTTL APPSTR - Append one string to another
+;  Appends the source string to the destination string.  The
+;  results are truncated, if needed, to fit into the max
+;  size of the destination
+;  Called as:
+;  MOV src, -(SP)
+;  MOV dest, -(SP)
+;  JSR PC, appstr
+;  ADD #4, SP
+;
+src = 12.
+dest = 10.
+appstr::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV R3, -(SP)
+;
+	MOV src(SP), R0		; Source pointer
+	INC R0
+	MOVB (R0), R2		; Get source length
+	CMPB #0, R2		; If it's zero
+	BEQ 3$			; There's nothing to do
+	MOV dest(SP), R1	; Destination pointer
+	MOVB (R1), R3		; Max size of dest
+	INC R1
+	MOVB (R1), R2		; Length of destination
+	SUB R2, R3		; Dest bytes available
+	MOVB (R0), R2		; Length of source
+	CMPB R3, R2
+	BHIS 1$
+	MOVB R3, R2		; Adjust length if needed
+;
+1$:	MOVB (R1), R3		; Get dest length
+	INC R0			; Point to start of
+	INC R1			; buffers
+	BIC #byteh, R3		; Clear any sign bits
+	ADD R3, R1		; Adjust dest pointer
+	ADD R2, R3		; Get final length of dest
+;
+2$:	MOVB (R0)+, (R1)+	; Copy string
+	SOB R2, 2$
+;
+	MOV dest(SP), R1
+	MOVB R3, 1(R1)		; Set destination length
+;
+3$:	MOV (SP)+, R3
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
