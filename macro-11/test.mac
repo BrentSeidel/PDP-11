@@ -12,6 +12,7 @@
 ;
 	.SBTTL start - Entry point to print message
 start::
+	BIS #flglz, flgnum
 	putsln #hello
 	puts #enttxt		; Ask for a string
 	gets #str		; Get the string
@@ -55,6 +56,7 @@ start::
 	JSR PC, putnum
 ;
 	.SBTTL Loop - To print numbers
+	BIC #flglz, flgnum
 	MOV #20., R0
 	MOV #-10., R1
 ;
@@ -106,22 +108,22 @@ l1:	JSR PC, putnum
 ;
 putnum:	cpstr #msg3, #outbuf
 	octstr #str, R1
-	trim #str, lz=1
+;	trim #str, lz=1
 	appstr #str, #outbuf
 	appstr #oct, #outbuf
 	decstr #str, R1
-	trim #str, lz=1
+;	trim #str, lz=1
 	appstr #str, #outbuf
 	appstr #dec, #outbuf
 	hexstr #str, R1
-	trim #str, lz=1
+;	trim #str, lz=1
 	appstr #str, #outbuf
 	appstr #hex, #outbuf
 	putsln #outbuf
 	RTS PC
 
 	.SBTTL Data - Space for text messages and strings
-	.PSECT DATA,CON
+;	.PSECT DATA,CON
 	text hello, <Hello world, again!>
 	string str, 80.
 	string short1, 5

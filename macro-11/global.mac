@@ -4,6 +4,18 @@
 	.TITLE Global - Common global data
 	.IDENT "X00.01"
 
+	.PSECT DATA,CON,REL,LCL
+	.SBTTL FLAGS - Flags for controlling number conversion
+flgnum::
+	.WORD 0
+;
+;  Individual flag values
+;
+flgneg ==: 1	; Used only during conversion to indicate a
+		; a negative number
+flgsgn ==: 2	; Set to convert signed numbers to strings
+flglz  ==: 4	; Set to include leading zeros on conversion
+
 	.SBTTL CONV - Global data for number conversions
 ;
 ;  This contains a table for converting between digits and ASCII.
@@ -30,4 +42,3 @@ bytel ==: 377
 byteh ==: 177400
 
 	.END
-

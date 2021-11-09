@@ -1,7 +1,7 @@
 ;
 ;  This file contains some routines to convert between numbers and strings.
 ;
-;	.INCLUDE /MACROS.MAC/
+	.INCLUDE /MACROS.MAC/
 	.TITLE STRNUM - Routines to convert between strings and numbers
 	.IDENT "X0.00"
 ;
@@ -14,11 +14,6 @@
 ;  a string transfer, the destination will hold a truncated value.
 ;
 	.PSECT STR,SAV,CON,GBL
-;
-;  Defined flag values
-flgneg = 1	; Negative flag
-flgsgn = 2	; Convert signed numbers
-flglz  = 4	; Produce leading zeros
 ;
 ;  The following three functions convert an unsigned 16 bit integer to a
 ;  string in octal, decimal, or hexidecimal representation.  They are all
@@ -57,21 +52,27 @@ octstr::
 	MOVB numtbl(R1), -(R2)	; Copy ASCII digit to buffer
 	ASH #-3, R0		; Shift out least octal digit
 	BIC #160000, R0		; And clear any sign bits
-	SOB R3, 1$		; Otherwise loop again
+	BNE 4$			; Continue if not zero
+	BIT #flglz, flgnum	; Otherwise check if leading zeros
+	BNE 6$
+4$:	SOB R3, 1$		; Otherwise loop again
+	BR 5$
+6$:	DEC R3
 ;
 ; Move to string (at this point, R2 points to the converted number)
 ;
-	MOV str(SP), R0		; Get address of string
+5$:	MOV str(SP), R0		; Get address of string
 	MOVB (R0), R1		; Get string max size
 	BIC #byteh, R1		; Clear any sign bits
 	CMPB #6, R1		; Don't transfer more than max
 	BHI 2$
 	MOV #6, R1		; R1 is number of chars
 
-2$:	INC R0			; Point to string length
+2$:	SUB R3, R1
+	INC R0			; Point to string length
 	MOVB R1, (R0)
 	INC R0			; Point to string buffer
-
+;
 3$:	MOVB (R2)+, (R0)+
 	SOB R1, 3$
 	JMP clnup
@@ -94,25 +95,33 @@ decstr::
 ;  Convert number to local buffer
 ;
 1$:	MOV R0, R1		; For DIV, R0/R1 is treated as a
-	XOR R0, R0		; 32 bit number so this get it in place
+	clr R0			; 32 bit number so this get it in place
 	DIV #10., R0
 	MOVB numtbl(R1), -(R2)	; Add digit to buffer
-	SOB R3, 1$
+	TST R0
+	BNE 4$			; Continue if not zero
+	BIT #flglz, flgnum	; Check if leading zeros
+	BNE 6$
+4$:	SOB R3, 1$
+;
+	BR 5$
+6$:	DEC R3
 ;
 ;  Now R2 points to the converted number.  Mov to the destination
 ;  string
 ;
-	MOV str(SP), R0		; Get address of string
+5$:	MOV str(SP), R0		; Get address of string
 	MOVB (R0), R1		; Get string max size
 	BIC #byteh, R1		; Clear any sign bits
 	CMPB #5, R1		; Make sure not to transfer any more
 	BHI 2$			; than the max size
 	MOV #5, R1
-
-2$:	INC R0			; Point to string length
+;
+2$:	SUB R3, R1
+	INC R0			; Point to string length
 	MOVB R1, (R0)		; Set string length
 	INC R0			; Point to string buffer
-
+;
 3$:	MOVB (R2)+, (R0)+	; Copy the data
 	SOB R1, 3$
 	JMP clnup
@@ -140,18 +149,24 @@ hexstr::
 	MOVB numtbl(R1), -(R2)	; Copy ASCII digit to buffer
 	ASH #-4, R0		; Shift out least octal digit
 	BIC #170000, R0		; and clear sign bits
-	SOB R3, 1$		; Loop until done
+	BNE 4$			; Continue if not zero
+	BIT #flglz, flgnum	; Otherwise check if leading zeros
+	BNE 6$
+4$:	SOB R3, 1$		; Loop until done
+	BR 5$
+6$:	DEC R3
 ;
 ;  Copy the string
 ;
-	MOV str(SP), R0		; Address of string
+5$:	MOV str(SP), R0		; Address of string
 	MOVB (R0), R1		; Max size of string
 	BIC #byteh, R1		; Clear any sign bits
 	CMPB #4, R1		; Make sure not to transfer
 	BHI 2$			; than the max size
 	MOV #4, R1
 
-2$:	INC R0			; Point to string lenght
+2$:	SUB R3, R1
+	INC R0			; Point to string lenght
 	MOVB R1, (R0)		; Set string length
 	INC R0			; Point to string buffer
 
@@ -187,10 +202,10 @@ stroct::
 	BEQ 2$		; Just return zero
 	CMPB #'-, (R0)	; Is first character a -
 	BNE 10$
-	BIS #flgneg, @#flags	; Set the negative flag
+	BIS #flgneg, flgnum	; Set the negative flag
 	INC R0
 	BR 1$
-10$:	BIC #flgneg, @#flags	; Clear the negative flag
+10$:	BIC #flgneg, flgnum	; Clear the negative flag
 	CMPB #'+, (R0)	; Is first character a +
 	BNE 1$
 	INC R0		; Just ignore it
@@ -203,7 +218,7 @@ stroct::
 	ADD R2, R3
 	SOB R1, 1$
 ;
-2$:	BIT #flgneg, @#flags	; Is number negative
+2$:	BIT #flgneg, flgnum	; Is number negative
 	BEQ 3$
 	NEG R3		; Negative it
 3$:	MOV R3, str(SP)
@@ -227,10 +242,10 @@ strdec::
 	BEQ 2$		; Just return zero
 	CMPB #'-, (R0)	; Is first character a -
 	BNE 10$
-	BIS #flgneg, @#flags	; Set the negative flag
+	BIS #flgneg, flgnum	; Set the negative flag
 	INC R0
 	BR 1$
-10$:	BIC #flgneg, @#flags	; Clear the negaive flag
+10$:	BIC #flgneg, flgnum	; Clear the negaive flag
 	CMPB #'+, (R0)	; Is first character a +
 	BNE 1$
 	INC R0		; Just ignore it
@@ -243,7 +258,7 @@ strdec::
 	ADD R2, R3
 	SOB R1, 1$
 ;
-2$:	BIT #flgneg, @#flags	; Is number negative?
+2$:	BIT #flgneg, flgnum	; Is number negative?
 	BEQ 3$
 	NEG R3		; Negative it
 3$:	MOV R3, str(SP)
@@ -267,10 +282,10 @@ strhex::
 	BEQ 3$		; Just return zero
 	CMPB #'-, (R0)	; Is the first character a -
 	BNE 10$
-	BIS #flgneg, @#flags	; Set the negative flag
+	BIS #flgneg, flgnum	; Set the negative flag
 	INC R0
 	BR 1$
-10$:	BIC #flgneg, @#flags	; Clear the negative flag
+10$:	BIC #flgneg, flgnum	; Clear the negative flag
 	CMPB #'+, (R0)	; Is the first character a +
 	BNE 1$
 	INC R0		; Just ignore it
@@ -287,7 +302,7 @@ strhex::
 	ADD R2, R3
 	SOB R1, 1$
 ;
-3$:	BIT #flgneg, @#flags	; Is the number negative
+3$:	BIT #flgneg, flgnum	; Is the number negative
 	BEQ 4$
 	NEG R3		; Negative it
 4$:	MOV R3, str(SP)
@@ -302,15 +317,9 @@ clnup:  MOV (SP)+, R3
         MOV (SP)+, R0
         RTS PC
 ;
-	.PSECT DATA LCL,REL,CON
-;
-;  Flags for number conversions.
-;  1 = Number is negative
-;  2 = Convert numbers as signed
-;  4 = Convert numbers with leading zeros
-;  Others are currently unused.
-;
-flags:	.WORD	0
+;  Text and strings for debugging.  Normally commented
+;  out.  Uncomment the .INCLUDE macros.mac at the top
+;  to use.
 ;
 ;	text neg, <The number is negative>
 ;	text pos, <The number is positive>
