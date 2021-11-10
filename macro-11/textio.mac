@@ -18,10 +18,10 @@
 ;
 	.SBTTL NEWLIN - Print a newline (cr/lf) to the console
 newlin::
-	MOV #2, xrb+xrlen
-	MOV #2, xrb+xrbc
-	MOV #crlf, xrb+xrloc
-	MOVB #0, xrb+xrci
+	MOV #2, @#xrb+xrlen
+	MOV #2, @#xrb+xrbc
+	MOV #crlf, @#xrb+xrloc
+	MOVB #0, @#xrb+xrci
 	.WRITE
 	RTS PC
 ;
@@ -35,10 +35,10 @@ newlin::
 	.SBTTL PUT - Put a text buffer to the console
 buf = 4
 len = 2
-put::	MOV buf(SP), xrb+xrlen
-	MOV buf(SP), xrb+xrbc
-	MOV len(SP), xrb+xrloc
-	MOVB #0, xrb+xrci
+put::	MOV buf(SP), @#xrb+xrlen
+	MOV buf(SP), @#xrb+xrbc
+	MOV len(SP), @#xrb+xrloc
+	CLRB @#xrb+xrci
 	.WRITE
 	RTS PC
 ;
@@ -55,11 +55,11 @@ puts::	MOV R0, -(SP)
 	INC R0
 	MOVB (R0), R1
 	BIC #byteh, R1
-	MOV R1, xrb+xrlen
-	MOV R1, xrb+xrbc
+	MOV R1, @#xrb+xrlen
+	MOV R1, @#xrb+xrbc
 	INC R0
-	MOV R0, xrb+xrloc
-	MOVB #0, xrb+xrci
+	MOV R0, @#xrb+xrloc
+	CLRB @#xrb+xrci
 	.WRITE
 ;
 	MOV (SP)+, R1
@@ -80,11 +80,11 @@ putsln::
 	INC R0
 	MOVB (R0), R1
 	BIC #byteh, R1
-	MOV R1, xrb+xrlen
-	MOV R1, xrb+xrbc
+	MOV R1, @#xrb+xrlen
+	MOV R1, @#xrb+xrbc
 	INC R0
-	MOV R0, xrb+xrloc
-	MOVB #0, xrb+xrci
+	MOV R0, @#xrb+xrloc
+	CLRB @#xrb+xrci
 	.WRITE
 ;
 	MOV (SP)+, R1
@@ -99,10 +99,10 @@ putsln::
 ;  ADD #4, SP
 ;
 	.SBTTL PUTLN - Put a text buffer followed by a newline to the console
-putln::	MOV buf(SP), xrb+xrlen
-	MOV buf(SP), xrb+xrbc
-	MOV len(SP), xrb+xrloc
-	MOVB #0, xrb+xrci
+putln::	MOV buf(SP), @#xrb+xrlen
+	MOV buf(SP), @#xrb+xrbc
+	MOV len(SP), @#xrb+xrloc
+	CLRB @#xrb+xrci
 	.WRITE
 	JMP newline
 ;
@@ -159,7 +159,6 @@ putdec::
 ;   R2 - Pointer to output buffer
 ;   R3 - Loop counter
 ;
-;	JMP unimpl
 	MOV R0, -(SP)		; Save registers
 	MOV R1, -(SP)
 	MOV R2, -(SP)
@@ -173,7 +172,7 @@ putdec::
 	XOR R0, R0
 	DIV #10., R0
 	MOVB numtbl(R1), -(R2)
-	CMP #0, R0
+	TST R0
 	BEQ 2$
 	SOB R3, 1$
 ;
@@ -238,29 +237,31 @@ gets::	MOV R0, -(SP)
 	MOVB (R0), R1
 	BIC #byteh, R1
 	ADD #2, R0
-	MOV R1, xrb+xrlen
-	MOV #0, xrb+xrbc
-	MOV R0, xrb+xrloc
-	MOV #0, xrb+xrci
-	MOV #0, xrb+xrtime
-	MOV #0, xrb+xrmod
+	MOV R1, @#xrb+xrlen
+	CLR @#xrb+xrbc
+	MOV R0, @#xrb+xrloc
+	CLRB @#xrb+xrci
+	CLR @#xrb+xrtime
+	CLR @#xrb+xrmod
 	.READ
-	SUB #1, R0
-	MOVB xrb+xrbc, (R0)
+	DEC R0
+	MOVB @#xrb+xrbc, (R0)
 ;
 	MOV (SP)+, R1
 	MOV (SP)+, R0
 	RTS PC
 ;
 ;  Print message for unimplemented routines
+;  Debugging code.  Keep commented out unless
+;  actually needed.
 ;
-unimpl:	MOV #unln, -(SP)
-	MOV #unimp, -(SP)
-	JSR PC, put
-	ADD #4, SP
-	RTS PC
+;unimpl:	MOV #unln, -(SP)
+;	MOV #unimp, -(SP)
+;	JSR PC, put
+;	ADD #4, SP
+;	RTS PC
 
-	.PSECT DATA
-unimp:	.ASCII "<unimplemented>"
-unln = . - unimp
+;	.PSECT DATA
+;unimp:	.ASCII "<unimplemented>"
+;unln = . - unimp
 	.END
