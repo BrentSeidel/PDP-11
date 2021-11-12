@@ -1,7 +1,7 @@
 ;
 ;  This file contains some routines to convert between numbers and strings.
 ;
-	.INCLUDE /MACROS.MAC/
+;	.INCLUDE /MACROS.MAC/
 	.TITLE STRNUM - Routines to convert between strings and numbers
 	.IDENT "X0.00"
 ;
@@ -33,9 +33,9 @@
 num = 10.	; Stack offset for number
 str = 12.	; Stack offset for string pointer
 octstr::
-	MOV R0, -(SP)
+	MOV R0, -(SP)		; Number value
 	MOV R1, -(SP)
-	MOV R2, -(SP)
+	MOV R2, -(SP)		; Temporary buffer
 	MOV R3, -(SP)
 ;
 ;  Prepare to convert number
@@ -44,6 +44,13 @@ octstr::
 	MOV #numbuf, R2		; Address of destination buffer
 	ADD #16., R2		; Point to end of buffer
 	MOV #6, R3		; Loop count limit
+	BIC #flgneg, flgnum	; Clear negative flag
+	BIT #flgsgn, flgnum	; Check if signed numbers
+	BEQ 1$
+	TST R0			; Check if number is negative
+	BGE 1$
+	BIS #flgneg, flgnum	; Set the negative flag
+	NEG R0			; and negate the number
 ;
 ;  Convert number to local buffer
 ;
@@ -54,28 +61,13 @@ octstr::
 	BIC #160000, R0		; And clear any sign bits
 	BNE 4$			; Continue if not zero
 	BIT #flglz, flgnum	; Otherwise check if leading zeros
-	BNE 6$
+	BEQ 6$
 4$:	SOB R3, 1$		; Otherwise loop again
 	BR 5$
 6$:	DEC R3
-;
-; Move to string (at this point, R2 points to the converted number)
-;
-5$:	MOV str(SP), R0		; Get address of string
-	MOVB (R0), R1		; Get string max size
-	BIC #byteh, R1		; Clear any sign bits
-	CMPB #6, R1		; Don't transfer more than max
-	BHI 2$
-	MOV #6, R1		; R1 is number of chars
+5$:	MOV #6, R1
 
-2$:	SUB R3, R1
-	INC R0			; Point to string length
-	MOVB R1, (R0)
-	INC R0			; Point to string buffer
-;
-3$:	MOVB (R2)+, (R0)+
-	SOB R1, 3$
-	JMP clnup
+	JMP clean1
 ;
 ;  Converts an integer value to a string containing the decimal represenation
 ;
@@ -91,6 +83,13 @@ decstr::
 	MOV #numbuf, R2		; Address of destination buffer
 	ADD #16., R2		; Point to end of destination
 	MOV #5, R3		; Loop count
+	BIC #flgneg, flgnum	; Clear negative flag
+	BIT #flgsgn, flgnum	; Check if signed numbers
+	BEQ 1$
+	TST R0			; Check if number is negative
+	BGE 1$
+	BIS #flgneg, flgnum	; Set negative flag
+	NEG R0			; and negate the number
 ;
 ;  Convert number to local buffer
 ;
@@ -101,7 +100,7 @@ decstr::
 	TST R0
 	BNE 4$			; Continue if not zero
 	BIT #flglz, flgnum	; Check if leading zeros
-	BNE 6$
+	BEQ 6$
 4$:	SOB R3, 1$
 ;
 	BR 5$
@@ -110,21 +109,9 @@ decstr::
 ;  Now R2 points to the converted number.  Mov to the destination
 ;  string
 ;
-5$:	MOV str(SP), R0		; Get address of string
-	MOVB (R0), R1		; Get string max size
-	BIC #byteh, R1		; Clear any sign bits
-	CMPB #5, R1		; Make sure not to transfer any more
-	BHI 2$			; than the max size
-	MOV #5, R1
-;
-2$:	SUB R3, R1
-	INC R0			; Point to string length
-	MOVB R1, (R0)		; Set string length
-	INC R0			; Point to string buffer
-;
-3$:	MOVB (R2)+, (R0)+	; Copy the data
-	SOB R1, 3$
-	JMP clnup
+5$:	MOV #5, R1
+
+	JMP clean1
 ;
 ;  Convert an integer value to a string containing the hexidecimal
 ;  representation.
@@ -141,6 +128,13 @@ hexstr::
 	MOV #numbuf, R2		; Address of destination
 	ADD #16., R2		; Point to end of destination
 	MOV #4, R3		; Loop count
+	BIC #flgneg, flgnum	; Clear negative clag
+	BIT #flgsgn, flgnum	; Check if signed numbers
+	BEQ 1$
+	TST R0			; Check if number is negative
+	BGE 1$
+	BIS #flgneg, flgnum	; Set negative flag
+	NEG R0			; and negate number
 ;
 ;  Convert number to local buffer
 ;
@@ -151,28 +145,59 @@ hexstr::
 	BIC #170000, R0		; and clear sign bits
 	BNE 4$			; Continue if not zero
 	BIT #flglz, flgnum	; Otherwise check if leading zeros
-	BNE 6$
+	BEQ 6$
 4$:	SOB R3, 1$		; Loop until done
 	BR 5$
 6$:	DEC R3
 ;
-;  Copy the string
+;  Figure out the string length
 ;
-5$:	MOV str(SP), R0		; Address of string
-	MOVB (R0), R1		; Max size of string
-	BIC #byteh, R1		; Clear any sign bits
-	CMPB #4, R1		; Make sure not to transfer
-	BHI 2$			; than the max size
-	MOV #4, R1
+5$:	MOV #4, R1
 
-2$:	SUB R3, R1
-	INC R0			; Point to string lenght
+	JMP clean1
+;
+;  The adding an optional minus sign and copying the converted
+;  string to the destination is common, so no need to repeat it
+;  in each routine.  At this point:
+;  R1 - Max number of bytes expected
+;  R2 - Pointer to source buffer
+;  R3 - Decremented loop counter
+;
+clean1:
+;
+;  Figure out string length
+;
+	SUB R3, R1		; Length of string is in R1
+;
+;  Check for adding negative sign
+;
+	BIT #flgsgn, flgnum	; Check for printing signed numnbers
+	BEQ 3$
+	BIT #flgneg, flgnum	; Is number negative
+	BEQ 3$
+	MOVB #'-, -(R2)		; Add the negative sign
+	INC R1			; Increase string length
+
+3$:	MOV str(SP), R0		; Get address of string
+	MOVB (R0), R3		; Max string size in R3
+	BIC #byteh, R3		; Clear any sign bits
+	CMPB R3, R1
+	BHI 2$
+	MOV R3, R1		; Limit size to max
+
+2$:	INC R0			; Point to string length
 	MOVB R1, (R0)		; Set string length
 	INC R0			; Point to string buffer
-
-3$:	MOVB (R2)+, (R0)+	; Copy data
-	SOB R1, 3$
-	JMP clnup
+1$:	MOVB (R2)+, (R0)+
+	SOB R1, 1$
+;
+;  Common cleanup for all routines.  Restore registers and return.
+;
+clnup:	MOV (SP)+, R3
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
 ;
 ;  The following routines convert strings containing digits to
 ;  numbers.  Conversion stop when an invalid digit is detected.
@@ -306,16 +331,7 @@ strhex::
 	BEQ 4$
 	NEG R3		; Negative it
 4$:	MOV R3, str(SP)
-	BR clnup
-;
-;  Common cleanup to restore registers and return from numeric
-;  conversion routines.
-;
-clnup:  MOV (SP)+, R3
-        MOV (SP)+, R2
-        MOV (SP)+, R1
-        MOV (SP)+, R0
-        RTS PC
+	JMP clnup
 ;
 ;  Text and strings for debugging.  Normally commented
 ;  out.  Uncomment the .INCLUDE macros.mac at the top
