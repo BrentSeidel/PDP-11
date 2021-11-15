@@ -1,3 +1,4 @@
+	.NLIST
 ;
 ;  Define some macros.
 ;
@@ -126,6 +127,35 @@ lbl:	.BYTE $1
 	MOV (SP)+, max
 .ENDM	strmax
 ;
+;  Extract a character from a string
+;
+.MACRO	strchr str, pos, chr
+	MOV str, -(SP)
+	MOV pos, -(SP)
+	JSR PC, strchr
+	MOV (SP)+, chr
+	ADD #2, SP
+.ENDM	strchr
+;
+;  Convert a character to a string
+;
+.MACRO	chrstr str, chr
+	MOV str, -(SP)
+	MOV chr, -(SP)
+	JSR PC, chrstr
+	ADD #4, SP
+.ENDM	chrstr
+;
+;  Find a character in a string
+;
+.MACRO	sfindc str, chr, pos
+	MOV str, -(SP)
+	MOV chr, -(SP)
+	JSR PC, sfindc
+	MOV (SP)+, pos
+	ADD #2, SP
+.ENDM	sfindc
+;
 ;  Convert unsigned integers to strings in octal, decimal,
 ;  and hexidecimal
 ;
@@ -211,3 +241,5 @@ lbl:	.BYTE $1
 	JSR PC, locase
 	ADD #2, SP
 .ENDM	locase
+
+	.LIST

@@ -12,7 +12,7 @@
 ;
 	.SBTTL start - Entry point to print message
 start::
-	BIS #flglz, flgnum
+	BIS #flglz+flgsgn, flgnum
 	putsln #hello
 	puts #enttxt		; Ask for a string
 	gets #str		; Get the string
@@ -22,14 +22,29 @@ start::
 	appstr #vbar, #outbuf
 	putsln #outbuf		; Print the string
 ;
+	sfindc #str, #32., R1
+;	MOV #str, -(SP)
+;	MOV #32., -(SP)
+;	JSR PC, sfindc		; Look for a space
+;	MOV (SP)+, R1
+;	ADD #2, SP
+	JSR PC, putnm1
+;
+	strchr #str, #5, R0
+	chrstr #temp, R0
+	cpstr #msg2, #outbuf
+	appstr #temp, #outbuf
+	appstr #vbar, #outbuf
+	putsln #outbuf
+;
 	upcase #str
 	puts #msg2
 	puts #str
-	putsln #vbar
+	putsln #vbar		; Put the uppercase string
 	locase #str
 	puts #msg2
 	puts #str
-	putsln #vbar
+	putsln #vbar		; Put the lowercase string
 ;
 	puts #msg4		; Print the string's max len
 	strmax #str, R0
@@ -40,28 +55,34 @@ start::
 	putdec R0
 	JSR PC, newline
 ;
-	puts #entnum
+	puts #entoct
 	gets #str
 	stroct #str, R1
-	JSR PC, putnum
+	JSR PC, putnm1
 ;
-	puts #entnum
+	puts #entdec
 	gets #str
 	strdec #str, R1
-	JSR PC, putnum
+	JSR PC, putnm1
 ;
-	puts #entnum
+	puts #enthex
 	gets #str
 	strhex #str, R1
-	JSR PC, putnum
+	JSR PC, putnm1
 ;
 	.SBTTL Loop - To print numbers
-	BIC #flglz, flgnum
-	MOV #20., R0
-	MOV #-10., R1
+	BIC #flglz+flgsgn, flgnum
+	puts #estart
+	gets #str
+	trim #str, ls=1
+	strdec #str, R1
+	puts #ecount
+	gets #str
+	trim #str, ls=1
+	strdec #str, R0
 ;
-l1:	JSR PC, putnum
-	ADD #1, R1
+l1:	JSR PC, putnm1
+	INC R1
 	SOB R0, l1
 ;
 	octstr #str, #173757
@@ -71,7 +92,7 @@ l1:	JSR PC, putnum
 	octstr #short1, #173757
 	puts #msg2c
 	puts #short1
-	putsln vbar
+	putsln #vbar
 ;
 	decstr #str, #31415.
 	puts #msg2b
@@ -106,30 +127,42 @@ l1:	JSR PC, putnum
 ;  Prints a number in octal, decimal, or hex.  The number is
 ;  passed in R1
 ;
-putnum:	cpstr #msg3, #outbuf
-	octstr #str, R1
-;	trim #str, lz=1
-	appstr #str, #outbuf
+;
+;  Print numbers by building a string and then printing it all
+;  at once.
+;
+putnm1:	cpstr #msg3, #outbuf
+	octstr #temp, R1
+	appstr #temp, #outbuf
 	appstr #oct, #outbuf
-	decstr #str, R1
-;	trim #str, lz=1
-	appstr #str, #outbuf
+	decstr #temp, R1
+	appstr #temp, #outbuf
 	appstr #dec, #outbuf
-	hexstr #str, R1
-;	trim #str, lz=1
-	appstr #str, #outbuf
+	hexstr #temp, R1
+	appstr #temp, #outbuf
 	appstr #hex, #outbuf
 	putsln #outbuf
 	RTS PC
+;
+;  Print numbers using direct I/O calls
+;
+putnm2:	puts #msg3
+	putoct R1
+	puts #oct
+	putdec R1
+	puts #dec
+	puthex R1
+	putsln #hex
+	RTS PC
 
 	.SBTTL Data - Space for text messages and strings
-;	.PSECT DATA,CON
 	text hello, <Hello world, again!>
 	string str, 80.
 	string short1, 5
 	string short2, 4
 	string short3, 3
 	string outbuf, 80.
+	string temp, 80.
 	text msg2c <The truncated number is |>
 	text enttxt, <Enter text: >
 	text msg2, <You entered: |>
@@ -138,8 +171,13 @@ putnum:	cpstr #msg3, #outbuf
 	text msg3, <The number is >
 	text msg4, <The string max len is: >
 	text msg5, <The string length is:  >
-	text entnum, <Enter a number: >
+	text entoct, <Enter an octal number: >
+	text entdec, <Enter a decimal number: >
+	text enthex, <Enter a hexidecimal number: >
+	text estart, <Enter starting value: >
+	text ecount, <Enter count: >
 	text oct, < Octal, >
 	text dec, < Decimal, >
 	text hex, < Hexidecimal >
+
 	.END start
