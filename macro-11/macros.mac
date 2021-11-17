@@ -241,5 +241,14 @@ lbl:	.BYTE $1
 	JSR PC, locase
 	ADD #2, SP
 .ENDM	locase
-
+;
+;  Compare strings for equality
+;
+.MACRO	streq str1, str2, res
+	MOV str1, -(SP)
+	MOV str2, -(SP)
+	JSR PC, streq
+	MOV (SP)+, res
+	ADD #2, SP
+.ENDM	streq
 	.LIST

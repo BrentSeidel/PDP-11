@@ -1,7 +1,7 @@
 ;
 ;  This file contains some routines to convert between numbers and strings.
 ;
-;	.INCLUDE /MACROS.MAC/
+	.INCLUDE /MACROS.MAC/
 	.TITLE STRNUM - Routines to convert between strings and numbers
 	.IDENT "X0.00"
 ;
@@ -15,9 +15,9 @@
 ;
 	.PSECT STR,SAV,CON,GBL
 ;
-;  The following three functions convert an unsigned 16 bit integer to a
-;  string in octal, decimal, or hexidecimal representation.  They are all
-;  called in a similar fashion:
+;  The following three functions convert a signed or unsigned 16 bit integer
+;  to a string in octal, decimal, or hexidecimal representation.  They are
+;  all called in a similar fashion:
 ;  MOV str, -(SP)
 ;  MOV num, -(SP)
 ;  JSR PC, xxxstr
@@ -228,11 +228,13 @@ stroct::
 	CMPB #'-, (R0)	; Is first character a -
 	BNE 10$
 	BIS #flgneg, flgnum	; Set the negative flag
+	DEC R1		; One character already processed
 	INC R0
 	BR 1$
 10$:	BIC #flgneg, flgnum	; Clear the negative flag
 	CMPB #'+, (R0)	; Is first character a +
 	BNE 1$
+	DEC R1
 	INC R0		; Just ignore it
 ;
 1$:	MOVB (R0)+, R2	; Character to test
@@ -268,11 +270,13 @@ strdec::
 	CMPB #'-, (R0)	; Is first character a -
 	BNE 10$
 	BIS #flgneg, flgnum	; Set the negative flag
+	DEC R1
 	INC R0
 	BR 1$
 10$:	BIC #flgneg, flgnum	; Clear the negaive flag
 	CMPB #'+, (R0)	; Is first character a +
 	BNE 1$
+	DEC R1
 	INC R0		; Just ignore it
 ;
 1$:	MOVB (R0)+, R2	; Character to test
@@ -308,11 +312,13 @@ strhex::
 	CMPB #'-, (R0)	; Is the first character a -
 	BNE 10$
 	BIS #flgneg, flgnum	; Set the negative flag
+	DEC R1
 	INC R0
 	BR 1$
 10$:	BIC #flgneg, flgnum	; Clear the negative flag
 	CMPB #'+, (R0)	; Is the first character a +
 	BNE 1$
+	DEC R1
 	INC R0		; Just ignore it
 ;
 1$:	MOVB (R0)+, R2	; Character to test
@@ -329,7 +335,9 @@ strhex::
 ;
 3$:	BIT #flgneg, flgnum	; Is the number negative
 	BEQ 4$
+	JSR PC, newline
 	NEG R3		; Negative it
+	JSR PC, newline
 4$:	MOV R3, str(SP)
 	JMP clnup
 ;

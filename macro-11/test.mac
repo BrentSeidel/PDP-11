@@ -14,21 +14,54 @@
 start::
 	BIS #flglz+flgsgn, flgnum
 	putsln #hello
-	puts #enttxt		; Ask for a string
+cloop:	puts #prompt		; Ask for a string
 	gets #str		; Get the string
-	trim #str,ts=1,lz=1,tz=1,ls=1	; Trim the string
-	cpstr #msg2, #outbuf
-	appstr #str, #outbuf
-	appstr #vbar, #outbuf
-	putsln #outbuf		; Print the string
-;
+	trim #str,ts=1,lz=1,ls=1	; Trim the string
+	upcase #str
 	sfindc #str, #32., R1
-;	MOV #str, -(SP)
-;	MOV #32., -(SP)
-;	JSR PC, sfindc		; Look for a space
-;	MOV (SP)+, R1
-;	ADD #2, SP
-	JSR PC, putnm1
+	substr #str, #cmd, #0, R1
+;
+;  Check for EXIT command
+;
+	streq #cmd, #cexit, R0
+	TST R0
+	BNE 100$
+	JMP done
+100$:	substr #str, #rest, R1, #0
+	trim #rest, ls=1
+;
+;  Check for OCTAL command
+;
+	streq #cmd, #coct, R0
+	TST R0
+	BNE 101$
+	JMP octal
+;
+;  Check for DEC command
+;
+101$:	streq #cmd, #cdec, R0
+	TST R0
+	BNE 102$
+	JMP deci
+;
+;  Check for HEX command
+;
+102$:	streq #cmd, #chex, R0
+	TST R0
+	BNE 103$
+	JMP hexi
+;
+;  No recognized command given
+;
+103$:	cpstr #firstw, #outbuf
+	appstr #cmd, #outbuf
+	appstr #vbar, #outbuf
+	putsln #outbuf
+;
+	cpstr #trest, #outbuf
+	appstr #rest, #outbuf
+	appstr #vbar, #outbuf
+	putsln #outbuf
 ;
 	strchr #str, #5, R0
 	chrstr #temp, R0
@@ -55,23 +88,22 @@ start::
 	putdec R0
 	JSR PC, newline
 ;
-	puts #entoct
-	gets #str
-	stroct #str, R1
-	JSR PC, putnm1
+	JMP cloop
 ;
-	puts #entdec
-	gets #str
-	strdec #str, R1
+octal:	stroct #rest, R1
 	JSR PC, putnm1
+	JMP cloop
 ;
-	puts #enthex
-	gets #str
-	strhex #str, R1
+deci:	strdec #rest, R1
 	JSR PC, putnm1
+	JMP cloop
+;
+hexi:	strhex #rest, R1
+	JSR PC, putnm1
+	JMP cloop
 ;
 	.SBTTL Loop - To print numbers
-	BIC #flglz+flgsgn, flgnum
+list:	BIC #flglz+flgsgn, flgnum
 	puts #estart
 	gets #str
 	trim #str, ls=1
@@ -84,54 +116,28 @@ start::
 l1:	JSR PC, putnm1
 	INC R1
 	SOB R0, l1
+	JMP cloop
 ;
-	octstr #str, #173757
-	puts #msg2b
-	puts #str
-	putsln #vbar
-	octstr #short1, #173757
-	puts #msg2c
-	puts #short1
-	putsln #vbar
-;
-	decstr #str, #31415.
-	puts #msg2b
-	puts #str
-	putsln #vbar
-	decstr #short2, #31415.
-	puts #msg2c
-	puts #short2
-	putsln #vbar
-;
-	hexstr #str, #7777
-	puts #msg2b
-	puts #str
-	putsln #vbar
-	hexstr #short3, #7777
-	puts #msg2c
-	puts #short3
-	putsln #vbar
-;
-	JSR PC, newline
-	putsln #hello
-	JSR PC, newline
-	substr #hello, #str, #6, #5
-	putsln #str
-;
-	cpstr #hello, #str
-	putsln #str
-	cpstr #hello, #short1
-	putsln #short1
-	.EXIT
+DONE:	.EXIT
 ;
 ;  Prints a number in octal, decimal, or hex.  The number is
-;  passed in R1
+;  passed in R1.  This is done by building a string and then
+;  printing it all at once.
 ;
-;
-;  Print numbers by building a string and then printing it all
-;  at once.
-;
-putnm1:	cpstr #msg3, #outbuf
+putnm1:	BIS #flgsgn, flgnum
+	cpstr #sgnum, #outbuf
+	octstr #temp, R1
+	appstr #temp, #outbuf
+	appstr #oct, #outbuf
+	decstr #temp, R1
+	appstr #temp, #outbuf
+	appstr #dec, #outbuf
+	hexstr #temp, R1
+	appstr #temp, #outbuf
+	appstr #hex, #outbuf
+	putsln #outbuf
+	BIC #flgsgn, flgnum
+	cpstr #unum, #outbuf
 	octstr #temp, R1
 	appstr #temp, #outbuf
 	appstr #oct, #outbuf
@@ -144,31 +150,19 @@ putnm1:	cpstr #msg3, #outbuf
 	putsln #outbuf
 	RTS PC
 ;
-;  Print numbers using direct I/O calls
-;
-putnm2:	puts #msg3
-	putoct R1
-	puts #oct
-	putdec R1
-	puts #dec
-	puthex R1
-	putsln #hex
-	RTS PC
-
 	.SBTTL Data - Space for text messages and strings
 	text hello, <Hello world, again!>
 	string str, 80.
-	string short1, 5
-	string short2, 4
-	string short3, 3
 	string outbuf, 80.
 	string temp, 80.
-	text msg2c <The truncated number is |>
+	string cmd, 80.
+	string rest, 80.
+	text prompt, <CMD: >
 	text enttxt, <Enter text: >
 	text msg2, <You entered: |>
 	text vbar, <|>
-	text msg2b, <The number is |>
-	text msg3, <The number is >
+	text sgnum, <The signed number is >
+	text unum, <The unsigned number is >
 	text msg4, <The string max len is: >
 	text msg5, <The string length is:  >
 	text entoct, <Enter an octal number: >
@@ -179,5 +173,11 @@ putnm2:	puts #msg3
 	text oct, < Octal, >
 	text dec, < Decimal, >
 	text hex, < Hexidecimal >
-
+	text firstw, <The first word |>
+	text trest, <The rest is |>
+	text cexit, <EXIT>
+	text coct, <OCTAL>
+	text cdec, <DEC>
+	text chex, <HEX>
+	text clist, <LIST>
 	.END start

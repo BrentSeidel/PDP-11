@@ -566,4 +566,45 @@ appstr::
 	MOV (SP)+, R0
 	RTS PC
 ;
+	.SBTTL STREQ - Tests if two string are equal or not
+;  The address of two string are passed on the stack.  The 
+;  result is passed on the stack in the str2 slot.  0 indicates
+;  equality.  Note that a different length indicates inequality.
+;  At some point, this may be extended to test ordering of strings.
+;  Called as:
+;  MOV str1, -(SP)
+;  MOV str2, -(SP)
+;  JSR PC, streq
+;  MOV (SP)+, res
+;  ADD #2, SP
+;
+str1 = 10.
+str2 = 8.
+res = 8.
+STREQ::	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+;
+	MOV str1(SP), R0	; Get string 1
+	MOV str2(SP), R1	; Get string 2
+	INC R0
+	INC R1			; Point to length
+	MOVB (R0), R2		; Get length
+;
+;  Note that this compares the lengths as well as the
+;  text of the strings.  Exit as soon as something is
+;  not equal.
+;
+2$:	CMPB (R0)+, (R1)+	; Compare
+	BNE 3$
+	SOB R2, 2$
+	CLR res(SP)
+	BR 1$
+3$:	MOV #1, res(SP)
+;
+1$:	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+;
 	.END
