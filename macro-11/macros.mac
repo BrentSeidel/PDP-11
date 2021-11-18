@@ -244,11 +244,11 @@ lbl:	.BYTE $1
 ;
 ;  Compare strings for equality
 ;
-.MACRO	streq str1, str2, res
+.MACRO	streq str1, str2
 	MOV str1, -(SP)
 	MOV str2, -(SP)
 	JSR PC, streq
-	MOV (SP)+, res
 	ADD #2, SP
+	TST (SP)+
 .ENDM	streq
 	.LIST

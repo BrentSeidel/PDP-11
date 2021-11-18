@@ -8,8 +8,6 @@
 	.IDENT	"X00.00"
 	.ENABL GBL
 ;
-; Need to include macros.mac to define common macros used here.
-;
 	.SBTTL start - Entry point to print message
 start::
 	BIS #flglz+flgsgn, flgnum
@@ -23,8 +21,7 @@ cloop:	puts #prompt		; Ask for a string
 ;
 ;  Check for EXIT command
 ;
-	streq #cmd, #cexit, R0
-	TST R0
+	streq #cmd, #cexit
 	BNE 100$
 	JMP done
 100$:	substr #str, #rest, R1, #0
@@ -32,28 +29,31 @@ cloop:	puts #prompt		; Ask for a string
 ;
 ;  Check for OCTAL command
 ;
-	streq #cmd, #coct, R0
-	TST R0
+	streq #cmd, #coct
 	BNE 101$
 	JMP octal
 ;
 ;  Check for DEC command
 ;
-101$:	streq #cmd, #cdec, R0
-	TST R0
+101$:	streq #cmd, #cdec
 	BNE 102$
 	JMP deci
 ;
 ;  Check for HEX command
 ;
-102$:	streq #cmd, #chex, R0
-	TST R0
+102$:	streq #cmd, #chex
 	BNE 103$
 	JMP hexi
 ;
+;  Check for LIST command
+;
+103$:	streq #cmd #clist
+	BNE 104$
+	JMP list
+;
 ;  No recognized command given
 ;
-103$:	cpstr #firstw, #outbuf
+104$:	cpstr #firstw, #outbuf
 	appstr #cmd, #outbuf
 	appstr #vbar, #outbuf
 	putsln #outbuf
@@ -104,21 +104,21 @@ hexi:	strhex #rest, R1
 ;
 	.SBTTL Loop - To print numbers
 list:	BIC #flglz+flgsgn, flgnum
-	puts #estart
-	gets #str
-	trim #str, ls=1
-	strdec #str, R1
-	puts #ecount
-	gets #str
-	trim #str, ls=1
-	strdec #str, R0
+	cpstr #rest, #str
+	sfindc #str, #32., R1
+	substr #str, #cmd, #0, R1
+	substr #str, #rest, R1, #0
+	trim #cmd,ls=1
+	trim #rest,ls=1
+	strdec #cmd, R1
+	strdec #rest, R0
 ;
-l1:	JSR PC, putnm1
+1$:	JSR PC, putnm1
 	INC R1
-	SOB R0, l1
+	SOB R0, 1$
 	JMP cloop
 ;
-DONE:	.EXIT
+done:	.EXIT
 ;
 ;  Prints a number in octal, decimal, or hex.  The number is
 ;  passed in R1.  This is done by building a string and then
@@ -161,15 +161,10 @@ putnm1:	BIS #flgsgn, flgnum
 	text enttxt, <Enter text: >
 	text msg2, <You entered: |>
 	text vbar, <|>
-	text sgnum, <The signed number is >
+	text sgnum, <  The signed number is >
 	text unum, <The unsigned number is >
 	text msg4, <The string max len is: >
 	text msg5, <The string length is:  >
-	text entoct, <Enter an octal number: >
-	text entdec, <Enter a decimal number: >
-	text enthex, <Enter a hexidecimal number: >
-	text estart, <Enter starting value: >
-	text ecount, <Enter count: >
 	text oct, < Octal, >
 	text dec, < Decimal, >
 	text hex, < Hexidecimal >

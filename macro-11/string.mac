@@ -568,19 +568,19 @@ appstr::
 ;
 	.SBTTL STREQ - Tests if two string are equal or not
 ;  The address of two string are passed on the stack.  The 
-;  result is passed on the stack in the str2 slot.  0 indicates
+;  result is passed on the stack in the str1 slot.  0 indicates
 ;  equality.  Note that a different length indicates inequality.
 ;  At some point, this may be extended to test ordering of strings.
 ;  Called as:
 ;  MOV str1, -(SP)
 ;  MOV str2, -(SP)
 ;  JSR PC, streq
-;  MOV (SP)+, res
 ;  ADD #2, SP
+;  TST (SP)+
 ;
 str1 = 10.
 str2 = 8.
-res = 8.
+res = 10.
 STREQ::	MOV R0, -(SP)
 	MOV R1, -(SP)
 	MOV R2, -(SP)
