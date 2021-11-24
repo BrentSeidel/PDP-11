@@ -63,7 +63,7 @@ strmax::
 ;  MOV char, -(SP)
 ;  JSR PC, sfindc
 ;  MOV (SP)+, pos
-;  ADD #2, SP
+res = 10.
 str = 10.
 char = 8.
 pos = 8.
@@ -88,11 +88,13 @@ sfindc::
 	MOVB (R0), R1		; Get string length
 	SUB R2, R1		; Subtract number searched
 	BIC #byteh, R1
-	MOV R1, pos(SP)
+	MOV R1, res(SP)
 
 1$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 
 	.SBTTL CHRSTR - Convert a character to a string
@@ -105,7 +107,6 @@ sfindc::
 ;  MOV str, -(SP)
 ;  MOV char, -(SP)
 ;  JSR PC, chrstr
-;  ADD #4, SP
 str = 8.
 char = 6
 chrstr::
@@ -119,6 +120,8 @@ chrstr::
 	MOVB R1, (R0)		; Set the character
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 4(SP)
+	ADD #4, SP
 	RTS PC
 
 	.SBTTL STRCHR - Returns a specified character from a string
@@ -131,10 +134,9 @@ chrstr::
 ;  MOV pos, -(SP)
 ;  JSR PC, strchr
 ;  MOV (SP)+, char
-;  ADD #2, SP
 str = 10.
 pos = 8.
-char = 8.
+char = 10.
 strchr::
 	MOV R0, -(SP)
 	MOV R1, -(SP)
@@ -152,11 +154,13 @@ strchr::
 	ADD R1, R0		; Move to selected character
 	MOVB (R0), R1		; Get character
 	BIC #byteh, R1		; Clear high bits
-	MOV R1, pos(SP)		; Put character on stack
+	MOV R1, char(SP)	; Put character on stack
 
 1$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 
 	.SBTTL TRIMTS - Trim trailing whitespace from a string
@@ -167,7 +171,6 @@ strchr::
 ;  Called as:
 ;  MOV str, -(SP)
 ;  JSR PC, strtrm
-;  ADD #2, SP
 str = 8.
 trimts::
 	MOV R0, -(SP)	; Use as addresses
@@ -197,6 +200,8 @@ trimts::
 4$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 
 	.SBTTL TRIMTZ - Trim trailing zeros from a string
@@ -231,6 +236,8 @@ trimtz::
 4$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 
 	.SBTTL TRIMLS - Trim leading whitespace from a string
@@ -276,6 +283,8 @@ trimls::
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 
 
@@ -325,6 +334,8 @@ trimlz::
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 ;
 	.SBTTL SUBSTR - Generalized substring routine
@@ -346,7 +357,6 @@ trimlz::
 ;  MOV start, -(SP)
 ;  MOV count, -(SP)
 ;  JSR PC, substr
-;  ADD #8., SP
 substr::
 count = 12.
 start = 14.
@@ -408,12 +418,13 @@ src = 18.
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 8.(SP)
+	ADD #8., SP
 	RTS PC
 ;
 ;  Convert strings to upper or lower case.  Called as
 ;  MOV str, -(SP)
 ;  JSR PC, xxcase
-;  ADD #2, SP
 ;
 	.SBTTL UPCASE - Convert a string to upper case
 ;  Convert to upper case in place
@@ -444,6 +455,8 @@ upcase::
 3$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 ;
 	.SBTTL LOCASE - Convert a string to lower case
@@ -474,6 +487,8 @@ locase::
 3$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 ;
 	.SBTTL CPSTR - Copy one string to another.
@@ -484,7 +499,6 @@ locase::
 ;  MOV src, -(SP)
 ;  MOV dest, -(SP)
 ;  JSR PC, CPSTR
-;  ADD #4, SP
 src = 10.
 dest = 8.
 CPSTR::	MOV R0, -(SP)	; Source string
@@ -512,6 +526,8 @@ CPSTR::	MOV R0, -(SP)	; Source string
 3$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 4(SP)
+	ADD #4, SP
 	RTS PC
 ;
 	.SBTTL APPSTR - Append one string to another
@@ -522,8 +538,6 @@ CPSTR::	MOV R0, -(SP)	; Source string
 ;  MOV src, -(SP)
 ;  MOV dest, -(SP)
 ;  JSR PC, appstr
-;  ADD #4, SP
-;
 src = 12.
 dest = 10.
 appstr::
@@ -564,6 +578,8 @@ appstr::
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 4(SP)
+	ADD #4, SP
 	RTS PC
 ;
 	.SBTTL STREQ - Tests if two string are equal or not
@@ -575,7 +591,6 @@ appstr::
 ;  MOV str1, -(SP)
 ;  MOV str2, -(SP)
 ;  JSR PC, streq
-;  ADD #2, SP
 ;  TST (SP)+
 ;
 str1 = 10.
@@ -605,6 +620,8 @@ STREQ::	MOV R0, -(SP)
 1$:	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 ;
 	.END

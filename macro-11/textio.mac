@@ -30,7 +30,6 @@ newlin::
 ;  MOV len, -(SP)
 ;  MOV addr, -(SP)
 ;  JSR PC, put
-;  ADD #4, SP
 ;
 	.SBTTL PUT - Put a text buffer to the console
 buf = 4
@@ -40,13 +39,14 @@ put::	MOV buf(SP), @#xrb+xrlen
 	MOV len(SP), @#xrb+xrloc
 	CLRB @#xrb+xrci
 	.WRITE
+	MOV (SP), 4(SP)
+	ADD #4, SP
 	RTS PC
 ;
 ;  Put a string to the console.  Called with the base address
 ;  of the string structure.
 ;  MOV str, -(SP)
 ;  JSR PC, puts
-;  ADD #2, SP
 ;
 	.SBTTL PUTS - Write a string to the console
 puts::	MOV R0, -(SP)
@@ -64,13 +64,14 @@ puts::	MOV R0, -(SP)
 ;
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 ;
 ;  Put a string to the console followed by a newline.  Called
 ;  with the base address of the string structure.
 ;  MOV str, -(SP)
 ;  JSR PC, putsnl
-;  ADD #4, SP
 ;
 	.SBTTL PUTSLN - Put a string followed by a newline to the console
 putsln::
@@ -89,6 +90,8 @@ putsln::
 ;
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	JMP newline
 ;
 ;  Put text followed by a newline to the console.  Called with
@@ -96,7 +99,6 @@ putsln::
 ;  MOV len, -(SP)
 ;  MOV addr, -(SP)
 ;  JSR PC, put
-;  ADD #4, SP
 ;
 	.SBTTL PUTLN - Put a text buffer followed by a newline to the console
 putln::	MOV buf(SP), @#xrb+xrlen
@@ -104,15 +106,20 @@ putln::	MOV buf(SP), @#xrb+xrlen
 	MOV len(SP), @#xrb+xrloc
 	CLRB @#xrb+xrci
 	.WRITE
+	MOV (SP), 4(SP)
+	ADD #4, SP
 	JMP newline
+	RTS PC
 ;
 ;  Numeric text output routines to print integers in octal, decimal, or
-;  hexidecimal.
+;  hexidecimal.  These are kept primarily for debugging purposes.  In
+;  general the xxxstr routines should be used to convert numbers to
+;  strings as they allow greater control over how the number is converted.
+;  The strings can then be manipulated as needed.
 ;
 ;  Put an octal number to the console.  Called with a 16 bit number
 ;  MOV num, -(SP)
 ;  JSR PC, putoct
-;  ADD #2, SP
 ;
 	.SBTTL PUTOCT - Put an octal number
 num = 10.
@@ -146,7 +153,6 @@ putoct::
 	MOV R0, -(SP)
 	MOV R2, -(SP)
 	JSR PC, put
-	ADD #4, SP
 ;
 	JMP clnup
 ;
@@ -181,7 +187,6 @@ putdec::
 	MOV R0, -(SP)
 	MOV R2, -(SP)
 	JSR PC, put
-	ADD #4, SP
 ;
 	JMP clnup
 
@@ -216,19 +221,19 @@ puthex::
 	MOV R0, -(SP)		; 4 hex digits
 	MOV R2, -(SP)		; buffer address
 	JSR PC, put		; print it out
-	ADD #4, SP
 ;
 clnup:	MOV (SP)+, R3		; Restore registers
 	MOV (SP)+, R2
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 ;
 ;  Get a string from the console.  Called with a pointer to
 ;  the string data structure.
 ;  MOV #str, -(SP)
 ;  JSR PC, gets
-;  ADD #2, SP
 ;
 	.SBTTL GETS - Get a string from the console
 gets::	MOV R0, -(SP)
@@ -249,6 +254,8 @@ gets::	MOV R0, -(SP)
 ;
 	MOV (SP)+, R1
 	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 ;
 ;  Print message for unimplemented routines

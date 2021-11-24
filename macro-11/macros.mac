@@ -11,50 +11,42 @@
 	MOV len, -(SP)
 	MOV msg, -(SP)
 	JSR PC, put
-	ADD #4, SP
 .ENDM	put
 
 .MACRO	puts text
 	MOV text, -(SP)
 	JSR PC, puts
-	ADD #2, SP
 .ENDM	puts
 
 .MACRO	gets str
 	MOV str, -(SP)
 	JSR PC, gets
-	ADD #2, SP
 .ENDM	gets
 
 .MACRO	putsln text
 	MOV text, -(SP)
 	JSR PC, putsln
-	ADD #2, SP
 .ENDM	putsln
 
 .MACRO	putln msg, len
 	MOV len, -(SP)
 	MOV msg, -(SP)
 	JSR PC, putln
-	ADD #4, SP
 .ENDM	putln
 
 .MACRO	putoct num
         MOV num, -(SP)
         JSR PC, putoct
-        ADD #2, SP
 .ENDM	putoct
 
 .MACRO	putdec num
 	MOV num, -(SP)
 	JSR PC, putdec
-	ADD #2, SP
 .ENDM	putdec
 
 .MACRO	puthex num
 	MOV num, -(SP)
 	JSR PC, puthex
-	ADD #2, SP
 .ENDM	puthex
 
 	.SBTTL STRING - Macros for string functions.
@@ -91,26 +83,27 @@ lbl:	.BYTE $1
 .MACRO	trimts str
 	MOV str, -(SP)
 	JSR PC, trimts
-	ADD #2, SP
 .ENDM	trimts
 ;
 ;  Generalized trim macro selects which trims to call
 ;
 .MACRO	trim str,ls,ts,lz,tz
-	MOV str, -(SP)
 .IF	NB ls
+	MOV str, -(SP)
 	JSR PC, trimls
 .ENDC
 .IF	NB ts
+	MOV str, -(SP)
 	JSR PC, trimts
 .ENDC
 .IF	NB lz
+	MOV str, -(SP)
 	JSR PC, trimlz
 .ENDC
 .IF	NB tz
+	MOV str, -(SP)
 	JSR PC, trimtz
 .ENDC
-	ADD #2, SP
 .ENDM	trim
 ;
 ;  Get the length and max length of a string
@@ -134,7 +127,6 @@ lbl:	.BYTE $1
 	MOV pos, -(SP)
 	JSR PC, strchr
 	MOV (SP)+, chr
-	ADD #2, SP
 .ENDM	strchr
 ;
 ;  Convert a character to a string
@@ -143,7 +135,6 @@ lbl:	.BYTE $1
 	MOV str, -(SP)
 	MOV chr, -(SP)
 	JSR PC, chrstr
-	ADD #4, SP
 .ENDM	chrstr
 ;
 ;  Find a character in a string
@@ -153,7 +144,6 @@ lbl:	.BYTE $1
 	MOV chr, -(SP)
 	JSR PC, sfindc
 	MOV (SP)+, pos
-	ADD #2, SP
 .ENDM	sfindc
 ;
 ;  Convert unsigned integers to strings in octal, decimal,
@@ -163,21 +153,18 @@ lbl:	.BYTE $1
 	MOV str, -(SP)
 	MOV num, -(SP)
 	JSR PC, octstr
-	ADD #4, SP
 .ENDM	octstr
 
 .MACRO	decstr str, num
 	MOV str, -(SP)
 	MOV num, -(SP)
 	JSR PC, decstr
-	ADD #4, SP
 .ENDM	decstr
 
 .MACRO hexstr str, num
 	MOV str, -(SP)
 	MOV num, -(SP)
 	JSR PC, hexstr
-	ADD #4, SP
 .ENDM	hexstr
 ;
 ;  Convert strings containing numbers to unsigned
@@ -209,7 +196,6 @@ lbl:	.BYTE $1
 	MOV start, -(SP)
 	MOV count, -(SP)
 	JSR PC, substr
-	ADD #8., SP
 .ENDM	substr
 ;
 ;  Other string manipulation
@@ -218,14 +204,12 @@ lbl:	.BYTE $1
 	MOV src, -(SP)
 	MOV dest, -(SP)
 	JSR PC, cpstr
-	ADD #4, SP
 .ENDM	cpstr
 
 .MACRO	appstr src, dest
 	MOV src, -(SP)
 	MOV dest, -(SP)
 	JSR PC, appstr
-	ADD #4, SP
 .ENDM	appstr
 ;
 ;  Convert strings to upper or lower case
@@ -233,13 +217,11 @@ lbl:	.BYTE $1
 .MACRO	upcase str
 	MOV str, -(SP)
 	JSR PC, upcase
-	ADD #2, SP
 .ENDM	upcase
 
 .MACRO	locase str
 	MOV str, -(SP)
 	JSR PC, locase
-	ADD #2, SP
 .ENDM	locase
 ;
 ;  Compare strings for equality
@@ -248,7 +230,6 @@ lbl:	.BYTE $1
 	MOV str1, -(SP)
 	MOV str2, -(SP)
 	JSR PC, streq
-	ADD #2, SP
 	TST (SP)+
 .ENDM	streq
 	.LIST
