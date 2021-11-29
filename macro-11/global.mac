@@ -4,7 +4,7 @@
 	.TITLE Global - Common global data
 	.IDENT "X00.01"
 
-	.PSECT DATA,CON,REL,LCL
+	.PSECT DATA,CON,REL,LCL,RW,D
 	.SBTTL FLAGS - Flags for controlling number conversion
 flgnum::
 	.WORD 0
@@ -22,7 +22,7 @@ flglz  ==: 4	; Set to include leading zeros on conversion
 ;  It could technically support up to base 36.  The buffer is 16
 ;  bytes long and could support binary.
 ;
-	.PSECT DATA,CON
+	.PSECT DATA
 numtbl::
 	.ASCII "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 numbuf::

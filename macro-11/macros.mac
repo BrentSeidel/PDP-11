@@ -59,7 +59,7 @@
 ;
 .MACRO	string lbl, max
 	.SAVE
-	.PSECT STRING,GBL
+	.PSECT STRING,GBL,CON,REL,RW,D
 lbl:	.BYTE max
 	.BYTE 0
 	.BLKB max
@@ -70,7 +70,7 @@ lbl:	.BYTE max
 ;
 .MACRO	text lbl, txt
 	.SAVE
-	.PSECT TEXT, GBL
+	.PSECT TEXT,GBL,CON,REL,RO,D
 	.NCHR $1, <txt>
 lbl:	.BYTE $1
 	.BYTE $1

@@ -3,12 +3,15 @@
 ;
 	.INCLUDE /$COMMON.MAC/
 	.INCLUDE /MACROS.MAC/
-	.PSECT CODE,SAV,CON,GBL
+	.PSECT CODE,SAV,CON,GBL,I
 	.TITLE TEST Program to test various libarary routines
 	.IDENT	"X00.00"
 	.ENABL GBL
 ;
 	.SBTTL start - Entry point to print message
+	text hello, <Macro-11 Test Program>
+	text prompt, <CMD: >
+	string str, 80.
 start::
 	BIS #flglz+flgsgn, flgnum
 	putsln #hello
@@ -51,9 +54,14 @@ cloop:	puts #prompt		; Ask for a string
 	BNE 104$
 	JMP list
 ;
+;  Check for STACK command
+104$:	streq #cmd, #cstack
+	BNE 105$
+	JMP estack
+;
 ;  No recognized command given
 ;
-104$:	cpstr #firstw, #outbuf
+105$:	cpstr #firstw, #outbuf
 	appstr #cmd, #outbuf
 	appstr #vbar, #outbuf
 	putsln #outbuf
@@ -102,6 +110,15 @@ hexi:	strhex #rest, R1
 	JSR PC, putnm1
 	JMP cloop
 ;
+estack:	MOV R0, -(SP)
+	MOV SP, R0
+	cpstr #tstack, #outbuf
+	octstr #str, R0
+	appstr #str, #outbuf
+	putsln #outbuf
+	MOV (SP)+, R0
+	JMP cloop
+;
 	.SBTTL Loop - To print numbers
 list:	BIC #flglz+flgsgn, flgnum
 	cpstr #rest, #str
@@ -124,6 +141,11 @@ done:	.EXIT
 ;  passed in R1.  This is done by building a string and then
 ;  printing it all at once.
 ;
+	text sgnum, <  The signed number is >
+	text unum,  <The unsigned number is >
+	text oct, < Octal, >
+	text dec, < Decimal, >
+	text hex, < Hexidecimal.>
 putnm1:	BIS #flgsgn, flgnum
 	cpstr #sgnum, #outbuf
 	octstr #temp, R1
@@ -136,6 +158,8 @@ putnm1:	BIS #flgsgn, flgnum
 	appstr #temp, #outbuf
 	appstr #hex, #outbuf
 	putsln #outbuf
+	TST R1
+	BGE 1$
 	BIC #flgsgn, flgnum
 	cpstr #unum, #outbuf
 	octstr #temp, R1
@@ -148,31 +172,25 @@ putnm1:	BIS #flgsgn, flgnum
 	appstr #temp, #outbuf
 	appstr #hex, #outbuf
 	putsln #outbuf
-	RTS PC
+1$:	RTS PC
 ;
 	.SBTTL Data - Space for text messages and strings
-	text hello, <Hello world, again!>
-	string str, 80.
 	string outbuf, 80.
 	string temp, 80.
 	string cmd, 80.
 	string rest, 80.
-	text prompt, <CMD: >
 	text enttxt, <Enter text: >
 	text msg2, <You entered: |>
 	text vbar, <|>
-	text sgnum, <  The signed number is >
-	text unum, <The unsigned number is >
 	text msg4, <The string max len is: >
 	text msg5, <The string length is:  >
-	text oct, < Octal, >
-	text dec, < Decimal, >
-	text hex, < Hexidecimal >
 	text firstw, <The first word |>
 	text trest, <The rest is |>
+	text tstack, <Current SP is >
 	text cexit, <EXIT>
 	text coct, <OCTAL>
 	text cdec, <DEC>
 	text chex, <HEX>
 	text clist, <LIST>
+	text cstack, <STACK>
 	.END start
