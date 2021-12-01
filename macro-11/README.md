@@ -44,6 +44,13 @@ The macros defined are:
 * upcase - Converts a string to uppercase
 * locase - Converts a string to lowercase
 * streq - Compares two strings for equality
+* r50str - Converts RAD50 to a string
+* strr50 - Converts a string to RAD50
+
+## STR50.MAC
+This contains routines to convert between strings and RAD50.  RAD50 is a
+way of packing 3 characters into 2 bytes and is used by a number of system
+services.
 
 ## STRING.MAC
 This contains all the string routines except those that convert between
