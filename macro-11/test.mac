@@ -11,10 +11,24 @@
 	.SBTTL start - Entry point to print message
 	text hello, <Macro-11 Test Program>
 	text prompt, <CMD: >
+	text dot, <.>
 	string str, 80.
 start::
 	BIS #flglz+flgsgn, flgnum
 	putsln #hello
+;
+	r50str #outbuf, @#firqb+fqnam1
+	r50str #str, @#firqb+fqnam1+2
+	appstr #str, #outbuf
+	appstr #dot, #outbuf
+	r50str #str, @#firqb+fqext
+	appstr #str, #outbuf
+	putsln #outbuf
+;
+	strr50 #hello, R0
+	r50str #str, R0
+	putsln #str
+;
 cloop:	puts #prompt		; Ask for a string
 	gets #str		; Get the string
 	trim #str,ts=1,lz=1,ls=1	; Trim the string

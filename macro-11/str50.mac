@@ -1,0 +1,141 @@
+;
+;  This file contains some routines to convert between ASCII strings
+;  and RAD50.  RAD50 is a way of packing 3 characters into 2 bytes
+;  using a restricted 40 character (50 in octal) character set.
+;
+;	.INCLUDE /MACROS.MAC/
+	.TITLE STR50 - Routines to convert between ASCII and RAD50
+	.IDENT "X00.01"
+;
+	.PSECT STR,SAV,CON,GBL,I
+;
+;  Convert a string to RAD50.  This is passed a string and the first 3
+;  characters are converted to a 16 bit word of RAD50.  Lower case
+;  characters are converted to upper case.  Any unknown character is
+;  converted to "?" (035 octal).  If the string is less than 3 characters,
+;  it is considered to be right padded with space characters.
+;  Called as:
+;  MOV str, -(SP)
+;  JSR PC, strr50
+;  MOV (SP)+, r50
+str = 10.
+r50 = 10.
+strr50::
+	MOV R0, -(SP)	; Result
+	MOV R1, -(SP)	; String pointer
+	MOV R2, -(SP)	; String length
+	MOV R3, -(SP)	; Character to convert
+;
+	MOV str(SP), R1	; Get string pointer
+	INC R1		; Point to length
+	MOVB (R1)+, R2	; Get string length
+	TST R2		; If string is length 0
+	BEQ 1$		; Just return 3 spaces
+;
+	MOVB (R1)+, R3	; Get first character
+	JSR PC, cvtchr	; Convert it
+	MUL #50*50, R3	; Move to first char
+	MOV R3, R0	; Copy to result
+	DEC R2		; Decrement string length
+	BEQ 1$		; Check if done
+;
+	MOVB (R1)+, R3	; Get second character
+	JSR PC, cvtchr
+	MUL #50, R3	; Move to second character
+	ADD R3, R0	; Add to result
+	DEC R2		; Decrement string length
+	BEQ 1$		; Check if done
+;
+	MOVB (R1), R3	; Get third character
+	JSR PC, cvtchr
+	ADD R3, R0	; Add to result
+
+1$:	MOV R0, r50(SP)	; Return result
+	MOV (SP)+, R3
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+;	MOV (SP), 2(SP)
+;	TST (SP)+
+	RTS PC
+;
+;  Looks up a single character in the RAD50 table.  This routine also
+;  takes care of upper-case conversion and unknown characters.  The
+;  character is passed in in R3 and the RAD50 value is returned in R3.
+;
+
+cvtchr:	MOV R0, -(SP)
+	MOV R2, -(SP)
+;
+;  Convert R3 to upper case
+;
+	CMPB #'a, R3
+	BHI 1$
+	CMPB #'z, R3
+	BLO 1$
+	SUB #'a-'A, R3
+;
+;  Search the RAD50 table for character
+;
+1$:	MOV #r50tbl, R0
+	MOV #r50len, R2
+2$:	CMPB (R0)+, R3
+	BEQ 3$
+	SOB R2, 2$
+	MOV #035, R3	; Unknown character
+	BR 4$
+
+3$:	MOV #r50len, R3
+	SUB R2, R3
+
+4$:	MOV (SP)+, R2
+	MOV (SP)+, R0
+	RTS PC
+;
+;  Converts RAD50 to a string.  This takes one word containing 3 RAD50
+;  characters and converts it to a 3 character string.  If the destination
+;  string cannot hold 3 characters, processing is aborted with the string
+;  unchanged.  On success, the output string has a length of 3.
+;  Called as
+;  MOV str, -(SP)
+;  MOV r50, -(SP)
+;  JSR PC, r50str
+str = 12.
+r50 = 10.
+r50str::
+	MOV R0, -(SP)	; String pointer
+	MOV R1, -(SP)	; RAD50 word
+	MOV R2, -(SP)	; Temp
+	MOV R3, -(SP)	; Temp
+;
+;  Check destination size
+;
+	MOV str(SP), R0
+	CMPB (R0), #3
+	BLO 1$
+;
+	INC R0
+	MOVB #3, (R0)+	; Set length and point to buff
+;
+	MOV r50(SP), R3
+	CLR R2
+	DIV #50, R2
+	MOVB r50tbl(R3), 2(R0)
+	MOV R2, R3
+	CLR R2
+	DIV #50, R2
+	MOVB r50tbl(R3), 1(R0)
+	MOV R2, R3
+	CLR R2
+	DIV #50, R2
+	MOVB r50tbl(R3), (R0)
+
+1$:	MOV (SP)+, R3
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	MOV (SP), 4(SP)
+	ADD #4, SP
+	RTS PC
+
+	.END

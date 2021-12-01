@@ -232,4 +232,20 @@ lbl:	.BYTE $1
 	JSR PC, streq
 	TST (SP)+
 .ENDM	streq
+;
+;  Convert RAD50 to a string
+;
+.MACRO r50str str, r50
+	MOV str, -(SP)
+	MOV r50, -(SP)
+	JSR PC, r50str
+.ENDM	r50str
+;
+;  Convert a string to RAD50
+;
+.MACRO	strr50 str, r50
+	MOV str, -(SP)
+	JSR PC, strr50
+	MOV (SP)+, r50
+.ENDM	strr50
 	.LIST
