@@ -248,4 +248,13 @@ lbl:	.BYTE $1
 	JSR PC, strr50
 	MOV (SP)+, r50
 .ENDM	strr50
+;
+;  Parse FIRQB contents into a string
+;
+.MACRO	cvtfqb flag, str
+	MOV str, -(SP)
+	MOV flag, -(SP)
+	JSR PC, cvtfqb
+.ENDM	cvtfqb
+;
 	.LIST

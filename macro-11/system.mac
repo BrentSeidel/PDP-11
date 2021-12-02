@@ -1,0 +1,148 @@
+;
+;  This file contains system related functions that are not
+;  involved in I/O (those will be in other files).
+;
+	.INCLUDE /$COMMON.MAC/
+	.INCLUDE /MACROS.MAC/
+	.TITlE SYSTEM - System related functions
+	.IDENT "X00.01"
+	.ENABL GBL
+;
+	.PSECT SYS,SAV,CON,GBL,I
+;
+;  Clear the XRB and FIRQB.  It is useful to do this before
+;  certain calls to ensure that no old data remains to confuse
+;  things.
+;  Called as:
+;  JSR PC, clrxrb
+;  JSR PC, clrfqb
+clrxrb::		; Clear the XRB
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+;
+	MOV #xrb, R0
+	MOV #xrbsiz/2, R1
+;
+1$:	CLR (R0)+
+	SOB R1, 1$
+;
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+clrfqb::		; Clear the FIRQB
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+;
+	MOV #firqb, R0
+	MOV #fqbsiz/2, R1
+;
+1$:	CLR (R0)+
+	SOB R1, 1$
+;
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	RTS PC
+;
+;  Exit the current program.  This never returns.  This is
+;  handy so that a module that only uses .EXIT won't have to
+;  include $COMMON.MAC.
+;  Called as:
+;  JMP exit
+exit::	.EXIT
+;
+;  Convert FIRQB data back into a file spec string.
+;  Flags exist for the various parts.
+cfnam ==: 1		; Convert the name
+cfext ==: 2		; Convert the extension
+cfppn ==: 4		; Convert the ppn
+cfdev ==: 8.		; Convert the device
+;  Called as:
+; MOV str, -(SP)
+; MOV flag, -(SP)
+; JSR PC, cvtfqb
+str = 12.
+flag = 10.
+cvtfqb::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV R3, -(SP)
+;
+	MOV flag(SP), R0
+	MOV str(SP), R1
+	MOV #scbuf, R2
+	MOVB #1, 1(R2)		; Set single character buff len to 1
+	MOV flgnum, -(SP)	; Save number format on stack
+	BIC #flglz+flgsgn, flgnum
+;
+	BIT #cfdev, R0
+	BEQ 1$
+	MOVB @#firqb+fqdev, 2(R2)
+	appstr R2, R1
+	MOVB @#firqb+fqdev+1, 2(R2)
+	appstr R2, R1
+	MOVB @#firqb+fqdevn+1, R3
+	BNE 10$
+	MOVB @#firqb+fqdevn, R3
+	decstr #cvtbuf, R3
+	appstr #cvtbuf, R1
+;
+;  Convert device
+;
+10$:	MOVB #':, 2(R2)
+	appstr R2, R1
+;
+1$:	BIT #cfppn, R0
+	BEQ 2$
+;
+;  Convert PPN
+;
+	MOVB #'[, 2(R2)
+	appstr #scbuf, R1
+	MOVB @#firqb+fqppn+1, R3
+	decstr #cvtbuf, R3
+	appstr #cvtbuf, R1
+;
+	MOVB #',, 2(R2)
+	appstr #scbuf, R1
+	MOVB @#firqb+fqppn, R3
+	decstr #cvtbuf, R3
+	appstr #cvtbuf, R1
+;
+	MOVB #'], 2(R2)
+	appstr #scbuf, R1
+;
+2$:	BIT #cfnam, R0
+	BEQ 3$
+;
+;  Convert name
+;
+	r50str #cvtbuf, @#firqb+fqnam1
+	appstr #cvtbuf, R1
+	r50str #cvtbuf, @#firqb+fqnam1+2
+	appstr #cvtbuf, R1
+;
+3$:	BIT #cfext, R0
+	BEQ 4$
+	MOVB #'., 2(R2)
+	appstr R2, R1	; Add a dot for the extension
+;
+;  Convert extension
+;
+	r50str #cvtbuf, @#firqb+fqext
+	appstr #cvtbuf, R1
+;
+4$:	MOV (SP)+, flgnum
+	MOV (SP)+, R3
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	MOV (SP), 4(SP)
+	ADD #4, SP
+	RTS PC
+;
+;  String buffers for routines
+;
+	string scbuf, 1		; A single character buffer
+	string cvtbuf, 6	; A buffer for number conversion
+	.END

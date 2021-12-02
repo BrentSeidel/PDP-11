@@ -17,12 +17,7 @@ start::
 	BIS #flglz+flgsgn, flgnum
 	putsln #hello
 ;
-	r50str #outbuf, @#firqb+fqnam1
-	r50str #str, @#firqb+fqnam1+2
-	appstr #str, #outbuf
-	appstr #dot, #outbuf
-	r50str #str, @#firqb+fqext
-	appstr #str, #outbuf
+	cvtfqb #cfnam+cfext+cfppn+cfdev, #outbuf
 	putsln #outbuf
 ;
 	strr50 #hello, R0
@@ -149,7 +144,8 @@ list:	BIC #flglz+flgsgn, flgnum
 	SOB R0, 1$
 	JMP cloop
 ;
-done:	.EXIT
+done:	JMP exit
+;	.EXIT
 ;
 ;  Prints a number in octal, decimal, or hex.  The number is
 ;  passed in R1.  This is done by building a string and then
