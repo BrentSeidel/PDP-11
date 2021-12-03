@@ -20,10 +20,6 @@ start::
 	cvtfqb #cfnam+cfext+cfppn+cfdev, #outbuf
 	putsln #outbuf
 ;
-	strr50 #hello, R0
-	r50str #str, R0
-	putsln #str
-;
 cloop:	puts #prompt		; Ask for a string
 	gets #str		; Get the string
 	trim #str,ts=1,lz=1,ls=1	; Trim the string
@@ -31,46 +27,49 @@ cloop:	puts #prompt		; Ask for a string
 	sfindc #str, #32., R1
 	substr #str, #cmd, #0, R1
 ;
-;  Check for EXIT command
+;  Check for commands
 ;
-	streq #cmd, #cexit
+	streq #cmd, #cexit		; Check for EXIT command
 	BNE 100$
 	JMP done
 100$:	substr #str, #rest, R1, #0
 	trim #rest, ls=1
 ;
-;  Check for OCTAL command
-;
-	streq #cmd, #coct
+	streq #cmd, #coct		; Check for OCTAL command
 	BNE 101$
 	JMP octal
 ;
-;  Check for DEC command
-;
-101$:	streq #cmd, #cdec
+101$:	streq #cmd, #cdec		; Check for DEC command
 	BNE 102$
 	JMP deci
 ;
-;  Check for HEX command
-;
-102$:	streq #cmd, #chex
+102$:	streq #cmd, #chex		; Check for HEX command
 	BNE 103$
 	JMP hexi
 ;
-;  Check for LIST command
-;
-103$:	streq #cmd #clist
+103$:	streq #cmd #clist		; Check for LIST command
 	BNE 104$
 	JMP list
 ;
-;  Check for STACK command
-104$:	streq #cmd, #cstack
+104$:	streq #cmd, #cstack		; Check for STACK command
 	BNE 105$
 	JMP estack
 ;
+105$:	streq #cmd, #cerr		; Check for ERROR command
+	BNE 106$
+	JMP eerr
+;
+106$:	streq #cmd, #cname		; Check for NAME command
+	BNE 107$
+	JMP ename
+;
+107$:	streq #cmd, #csleep		;  Check for SLEEP command
+	BNE 108$
+	JMP esleep
+;
 ;  No recognized command given
 ;
-105$:	cpstr #firstw, #outbuf
+108$:	cpstr #firstw, #outbuf
 	appstr #cmd, #outbuf
 	appstr #vbar, #outbuf
 	putsln #outbuf
@@ -117,6 +116,18 @@ deci:	strdec #rest, R1
 ;
 hexi:	strhex #rest, R1
 	JSR PC, putnm1
+	JMP cloop
+;
+eerr:	strdec #rest, R1
+	geterr R1, #outbuf
+	putsln #outbuf
+	JMP cloop
+;
+ename:	setnam #rest
+	JMP cloop
+;
+esleep:	strdec #rest, R1
+	sleep R1
 	JMP cloop
 ;
 estack:	MOV R0, -(SP)
@@ -203,4 +214,7 @@ putnm1:	BIS #flgsgn, flgnum
 	text chex, <HEX>
 	text clist, <LIST>
 	text cstack, <STACK>
+	text cerr, <ERROR>
+	text cname, <NAME>
+	text csleep, <SLEEP>
 	.END start

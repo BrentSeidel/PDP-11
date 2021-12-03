@@ -257,4 +257,26 @@ lbl:	.BYTE $1
 	JSR PC, cvtfqb
 .ENDM	cvtfqb
 ;
+;  Get message for an error code
+;
+.MACRO	geterr err, str
+	MOV str, -(SP)
+	MOV err, -(SP)
+	JSR PC, geterr
+.ENDM	geterr
+;
+;  Sets the program name
+;
+.MACRO	setnam str
+	MOV str, -(SP)
+	JSR PC, setnam
+.ENDM	setnam
+;
+;  Sleeps for a specified amount of time
+;
+.MACRO	sleep time
+	MOV time, -(SP)
+	JSR PC, sleep
+.ENDM	sleep
+;
 	.LIST

@@ -141,6 +141,87 @@ cvtfqb::
 	ADD #4, SP
 	RTS PC
 ;
+;  Returns the text for a specific error code in a string.  The error
+;  code is truncated to be one byte - any high order bits are discarded.
+;  The error text is truncated, if needed, to fit in the destination
+;  string.  Any former contents of the string are lost.
+;  Called as
+;  MOV str, -(SP)
+;  MOV err, -(SP)
+;  JSR PC, geterr
+str = 10.
+err = 8.
+geterr::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+;
+	MOV str(SP), R0
+	MOV err(SP), R1
+;
+	MOVB #errfq, @#firqb+fqfun
+	MOVB R1, @#firqb+fqerno
+	CALFIP
+;
+	MOVB (R0), R1		; Get string max len
+	CMPB R1, #28.		; Check if long enough
+	BLO 1$
+	MOV #28., R1		; String is long enough
+1$:	INC R0
+	MOVB R1, (R0)		; Set destination length
+	INC R0			; Point to destination
+	MOV #firqb+fqfil, R2	; Point to source
+2$:	MOVB (R2)+, (R0)+
+	SOB R1, 2$ 
+;
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	MOV (SP), 4(SP)
+	ADD #4, SP
+	RTS PC
+;
+;  Sets the currently executing program's name to the specified
+;  text.  It is called with a string.  The string is converted
+;  to two words of RAD50 that are then used to set the name.  Thus,
+;  only the first 6 characters of the string are used and if the
+;  string is shorter, it is considered to be padded on the right
+;  with spaces.
+;  Called as:
+;  MOV str, -(SP)
+;  JSR PC, setnam
+str = 6.
+setnam::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	JSR PC, clrfqb
+;
+	MOV str(SP), R0
+	substr R0, #cvtbuf, #0, #3
+	strr50 #cvtbuf, R1
+	MOV R1, @#firqb+fqnam1
+	substr R0, #cvtbuf, #3, #3
+	strr50 #cvtbuf, R1
+	MOV R1, @#firqb+fqnam1+2
+	.NAME
+;
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
+	RTS PC
+;
+;  Suspend job for a specified amount of time.
+;  Called as
+;  MOV time, -(SP)
+;  JSR PC, sleep
+sleep::	JSR PC, clrxrb
+	MOV 2(SP), @#xrb+xrlen
+	.SLEEP
+	MOV (SP), 2(SP)
+	TST (SP)+
+	RTS PC
+;
 ;  String buffers for routines
 ;
 	string scbuf, 1		; A single character buffer

@@ -46,6 +46,10 @@ The macros defined are:
 * streq - Compares two strings for equality
 * r50str - Converts RAD50 to a string
 * strr50 - Converts a string to RAD50
+* cvtfqb - Parses FIRQB contents into a filespec
+* geterr - Gets a specific system error message
+* setnam - Sets the program's name
+* sleep - Suspends processing for a specified number of seconds
 
 ## STR50.MAC
 This contains routines to convert between strings and RAD50.  RAD50 is a
@@ -59,6 +63,10 @@ strings and numbers
 ## STRNUM.MAC
 Contains routines to convert between strings and numbers.  Numbers may
 be signed or unsigned 16 bit integers with optional leading zeros.
+
+## SYSTEM.MAC
+Contains routines to interface with the RSTS/E monitor.  These are generally
+not file or I/O related functions.
 
 ## TEXTIO.MAC
 This contains the I/O routines.  Note that RSTS/E system calls are used.
