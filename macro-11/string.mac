@@ -3,7 +3,7 @@
 ;
 	.INCLUDE /MACROS.MAC/
 	.TITLE STRING - Collection of routines to work on strings
-	.IDENT "X0.00"
+	.IDENT "X00.01"
 ;
 ;  The data structure for a string is defined as follows:
 ;  str:  byte max - Maximum length of the string.  This should never change
@@ -13,7 +13,7 @@
 ;  Note that in general, if the destination is not large enough to hold
 ;  a string transfer, the destination will hold a truncated value.
 ;
-	.PSECT STR,SAV,CON,GBL
+	.PSECT STR,SAV,CON,GBL,I
 
 	.SBTTL STRLEN - Get the length of a string
 ;  Called with the address of the string on the stack and returns
@@ -123,7 +123,45 @@ chrstr::
 	MOV (SP), 4(SP)
 	ADD #4, SP
 	RTS PC
+;
+	.SBTTL REPCHR - Returns a string of repeating characters
+;  Passed the address of a string, a character, and a count.  The string
+;  is filled with the count number of characters, or the string max
+;  size, whichever is less.
+;  Called as
+;  MOV str, -(SP)
+;  MOV chr, -(SP)
+;  MOV count, -(SP)
+;  JSR PC, repchr
+str = 12.
+chr = 10.
+count = 8.
+repchr::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	MOV R2, -(SP)
+	MOV str(SP), R0		; String pointer
+	MOVB (R0), R1		; String max size
+	MOV count(SP), R2	; Count
+	BIC #byteh, R2
+	CMPB R1, R2		; Compare count and max size
+	BHI 1$
+	MOV R1, R2
+1$:	MOV chr(SP), R1		; Get character
+	INC R0			; Point to length
+	MOVB R2, (R0)		; Set string length
+	INC R0			; Point to buffer
 
+2$:	MOVB R1, (R0)+
+	SOB R2, 2$		; Fill buffer
+
+	MOV (SP)+, R2
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	MOV (SP), 6(SP)
+	ADD #6, SP
+	RTS PC
+;
 	.SBTTL STRCHR - Returns a specified character from a string
 ;  The address of the string and the position in the string are passed
 ;  in on the stack.  The character at the index is returned on the stack
@@ -498,10 +536,10 @@ locase::
 ;  Called as
 ;  MOV src, -(SP)
 ;  MOV dest, -(SP)
-;  JSR PC, CPSTR
+;  JSR PC, cpstr
 src = 10.
 dest = 8.
-CPSTR::	MOV R0, -(SP)	; Source string
+cpstr::	MOV R0, -(SP)	; Source string
 	MOV R1, -(SP)	; Destination string
 	MOV R2, -(SP)	; Bytes to move
 ;

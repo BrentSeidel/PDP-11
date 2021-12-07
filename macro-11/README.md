@@ -6,6 +6,9 @@ representing the maximum and actual length followed by a series of bytes
 containing the string.  The routines and data are spread across a number
 of files.
 
+## FILES.MAC
+This file contains routines relating to the RSTS/E file system.
+
 ## GLOBAL.MAC
 This file contains global data that is used by some of the routines.
 
@@ -32,6 +35,7 @@ The macros defined are:
 * strmac - Get the maximum length of a string
 * strchr - Extract a specific character from a string
 * chrstr - Convert a character to a string
+* repchr - Create a string of repeated characters
 * sfindc - Search a string for a specific character
 * octstr - Converts a number to an octal string
 * decstr - Converts a number to a decimal string
@@ -50,6 +54,7 @@ The macros defined are:
 * geterr - Gets a specific system error message
 * setnam - Sets the program's name
 * sleep - Suspends processing for a specified number of seconds
+* parsef - Parse a filespec string into the FIRQB
 
 ## STR50.MAC
 This contains routines to convert between strings and RAD50.  RAD50 is a

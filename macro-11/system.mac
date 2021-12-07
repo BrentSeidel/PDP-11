@@ -9,6 +9,7 @@
 	.ENABL GBL
 ;
 	.PSECT SYS,SAV,CON,GBL,I
+	.SBTTL CLRXRB - Clears the XRB
 ;
 ;  Clear the XRB and FIRQB.  It is useful to do this before
 ;  certain calls to ensure that no old data remains to confuse
@@ -16,7 +17,7 @@
 ;  Called as:
 ;  JSR PC, clrxrb
 ;  JSR PC, clrfqb
-clrxrb::		; Clear the XRB
+clrxrb::
 	MOV R0, -(SP)
 	MOV R1, -(SP)
 ;
@@ -29,7 +30,9 @@ clrxrb::		; Clear the XRB
 	MOV (SP)+, R1
 	MOV (SP)+, R0
 	RTS PC
-clrfqb::		; Clear the FIRQB
+;
+	.SBTTL CLRFQB - Clears the FIRQB
+clrfqb::
 	MOV R0, -(SP)
 	MOV R1, -(SP)
 ;
@@ -43,6 +46,7 @@ clrfqb::		; Clear the FIRQB
 	MOV (SP)+, R0
 	RTS PC
 ;
+	.SBTTL EXIT - Exits the current program
 ;  Exit the current program.  This never returns.  This is
 ;  handy so that a module that only uses .EXIT won't have to
 ;  include $COMMON.MAC.
@@ -50,6 +54,7 @@ clrfqb::		; Clear the FIRQB
 ;  JMP exit
 exit::	.EXIT
 ;
+	.SBTTL CVTFQB - Converts FIRQB to a file spec string
 ;  Convert FIRQB data back into a file spec string.
 ;  Flags exist for the various parts.
 cfnam ==: 1		; Convert the name
@@ -82,7 +87,7 @@ cvtfqb::
 	MOVB @#firqb+fqdev+1, 2(R2)
 	appstr R2, R1
 	MOVB @#firqb+fqdevn+1, R3
-	BNE 10$
+	BEQ 10$
 	MOVB @#firqb+fqdevn, R3
 	decstr #cvtbuf, R3
 	appstr #cvtbuf, R1
@@ -100,12 +105,14 @@ cvtfqb::
 	MOVB #'[, 2(R2)
 	appstr #scbuf, R1
 	MOVB @#firqb+fqppn+1, R3
+	BIC #byteh, R3
 	decstr #cvtbuf, R3
 	appstr #cvtbuf, R1
 ;
 	MOVB #',, 2(R2)
 	appstr #scbuf, R1
 	MOVB @#firqb+fqppn, R3
+	BIC #byteh, R3
 	decstr #cvtbuf, R3
 	appstr #cvtbuf, R1
 ;
@@ -141,6 +148,7 @@ cvtfqb::
 	ADD #4, SP
 	RTS PC
 ;
+	.SBTTL GETERR - Returns a system error message
 ;  Returns the text for a specific error code in a string.  The error
 ;  code is truncated to be one byte - any high order bits are discarded.
 ;  The error text is truncated, if needed, to fit in the destination
@@ -152,6 +160,7 @@ cvtfqb::
 str = 10.
 err = 8.
 geterr::
+	JSR PC, clrfqb
 	MOV R0, -(SP)
 	MOV R1, -(SP)
 	MOV R2, -(SP)
@@ -181,6 +190,7 @@ geterr::
 	ADD #4, SP
 	RTS PC
 ;
+	.SBTTL SETNAM - Sets the current program name
 ;  Sets the currently executing program's name to the specified
 ;  text.  It is called with a string.  The string is converted
 ;  to two words of RAD50 that are then used to set the name.  Thus,
@@ -211,7 +221,8 @@ setnam::
 	TST (SP)+
 	RTS PC
 ;
-;  Suspend job for a specified amount of time.
+	.SBTTL SLEEP - Suspends job for a number of seconds
+;  Suspend job for a specified amount of time in seconds.
 ;  Called as
 ;  MOV time, -(SP)
 ;  JSR PC, sleep

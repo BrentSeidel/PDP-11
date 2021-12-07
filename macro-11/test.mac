@@ -17,11 +17,8 @@ start::
 	BIS #flglz+flgsgn, flgnum
 	putsln #hello
 ;
-	cvtfqb #cfnam+cfext+cfppn+cfdev, #outbuf
-	putsln #outbuf
-;
-cloop:	puts #prompt		; Ask for a string
-	gets #str		; Get the string
+cloop:	puts #prompt			; Ask for a string
+	gets #str			; Get the string
 	trim #str,ts=1,lz=1,ls=1	; Trim the string
 	upcase #str
 	sfindc #str, #32., R1
@@ -67,9 +64,25 @@ cloop:	puts #prompt		; Ask for a string
 	BNE 108$
 	JMP esleep
 ;
+108$:	streq #cmd, #cstar		;  Check for STAR command
+	BNE 109$
+	JMP estar
+;
+109$:	streq #cmd, #cfirqb		;  Check for FIRQB command
+	BNE 110$
+	JMP efirqb
+;
+110$:	streq #cmd, #cfqerr		;  Check for FQERR command
+	BNE 111$
+	JMP efqerr
+;
+111$:	streq #cmd, #cparsf		;  Check for PARSE command
+	BNE 112$
+	JMP eparsf
+;
 ;  No recognized command given
 ;
-108$:	cpstr #firstw, #outbuf
+112$:	cpstr #firstw, #outbuf
 	appstr #cmd, #outbuf
 	appstr #vbar, #outbuf
 	putsln #outbuf
@@ -130,6 +143,13 @@ esleep:	strdec #rest, R1
 	sleep R1
 	JMP cloop
 ;
+estar:	strdec #rest, R1
+	repchr #str, #'*, R1
+	puts #thestr
+	puts #str
+	putsln #vbar
+	JMP cloop
+;
 estack:	MOV R0, -(SP)
 	MOV SP, R0
 	cpstr #tstack, #outbuf
@@ -153,6 +173,21 @@ list:	BIC #flglz+flgsgn, flgnum
 1$:	JSR PC, putnm1
 	INC R1
 	SOB R0, 1$
+	JMP cloop
+;
+efirqb:	cpstr #thestr, #outbuf
+	cvtfqb #cfnam+cfext+cfppn+cfdev, #outbuf
+	appstr #vbar, #outbuf
+	putsln #outbuf
+	JMP cloop
+;
+efqerr:	MOVB @#firqb, R0
+	BIC #byteh, R0
+	geterr R0, #outbuf
+	putsln #outbuf
+	JMP cloop
+;
+eparsf:	parsef #rest
 	JMP cloop
 ;
 done:	JMP exit
@@ -205,9 +240,13 @@ putnm1:	BIS #flgsgn, flgnum
 	text vbar, <|>
 	text msg4, <The string max len is: >
 	text msg5, <The string length is:  >
+	text thestr, <The string is |>
 	text firstw, <The first word |>
 	text trest, <The rest is |>
 	text tstack, <Current SP is >
+;
+;  Text for commands
+;
 	text cexit, <EXIT>
 	text coct, <OCTAL>
 	text cdec, <DEC>
@@ -217,4 +256,9 @@ putnm1:	BIS #flgsgn, flgnum
 	text cerr, <ERROR>
 	text cname, <NAME>
 	text csleep, <SLEEP>
+	text cstar, <STARS>
+	text cfirqb, <FIRQB>
+	text cfqerr, <FQERR>
+	text cparsf, <PARSE>
+;
 	.END start

@@ -137,6 +137,15 @@ lbl:	.BYTE $1
 	JSR PC, chrstr
 .ENDM	chrstr
 ;
+;  Repeat a character multiple times
+;
+.MACRO	repchr str, chr, count
+	MOV str, -(SP)
+	MOV chr, -(SP)
+	MOV count, -(SP)
+	JSR PC, repchr
+.ENDM	repchr
+;
 ;  Find a character in a string
 ;
 .MACRO	sfindc str, chr, pos
@@ -249,6 +258,8 @@ lbl:	.BYTE $1
 	MOV (SP)+, r50
 .ENDM	strr50
 ;
+	.SBTTL SYSTEM - Macros for system functions
+;
 ;  Parse FIRQB contents into a string
 ;
 .MACRO	cvtfqb flag, str
@@ -278,5 +289,22 @@ lbl:	.BYTE $1
 	MOV time, -(SP)
 	JSR PC, sleep
 .ENDM	sleep
+;
+;  Inline version of sleep.  Use this if you're already
+;  including $COMMON.MAC.
+;
+.MACRO	sleep1 time
+	MOV time, @#xrb+xrlen
+	.SLEEP
+.ENDM	sleep1
+;
+	.SBTTL FILES - Macros for file functions
+;
+;  Parse a string into a file spec in the FIRQB
+;
+.MACRO	parsef str
+	MOV str, -(SP)
+	JSR PC, parsef
+.ENDM	parsef
 ;
 	.LIST

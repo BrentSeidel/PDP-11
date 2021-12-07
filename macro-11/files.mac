@@ -1,0 +1,41 @@
+;
+;  This file contains file related functions.
+;
+	.INCLUDE /$COMMON.MAC/
+	.INCLUDE /MACROS.MAC/
+	.TITLE FILES - File related functions
+	.IDENT "X00.01"
+	.ENABL GBL
+;
+	.PSECT FILE,SAV,CON,GBL,I
+	.SBTTL PARSEF - Parse a filespec into the FIRQB
+;
+;  Parses a string containing a filespec and fills the appropriate
+;  fields in the FIRQB
+;  Called as:
+;  MOV str, -(SP)
+;  JSR PC, parsef
+str = 6
+parsef::
+	MOV R0, -(SP)
+	MOV R1, -(SP)
+	JSR PC, clrxrb
+	JSR PC, clrfqb
+;
+	MOV str(SP), R0		; Get string
+	INC R0			; Point to string length
+	MOVB (R0), R1
+	BIC #byteh, R1
+	MOV R1, @#xrb+xrlen
+	MOV R1, @#xrb+xrbc
+	INC R0
+	MOV R0, @#xrb+xrloc
+	.FSS
+;
+	MOV (SP)+, R1
+	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
+	RTS PC
+;
+	.END

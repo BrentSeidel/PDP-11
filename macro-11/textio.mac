@@ -18,6 +18,7 @@
 ;
 	.SBTTL NEWLIN - Print a newline (cr/lf) to the console
 newlin::
+	JSR PC, clrxrb
 	MOV #2, @#xrb+xrlen
 	MOV #2, @#xrb+xrbc
 	MOV #crlf, @#xrb+xrloc
@@ -34,7 +35,8 @@ newlin::
 	.SBTTL PUT - Put a text buffer to the console
 buf = 4
 len = 2
-put::	MOV buf(SP), @#xrb+xrlen
+put::	JSR PC, clrxrb
+	MOV buf(SP), @#xrb+xrlen
 	MOV buf(SP), @#xrb+xrbc
 	MOV len(SP), @#xrb+xrloc
 	CLRB @#xrb+xrci
@@ -49,9 +51,11 @@ put::	MOV buf(SP), @#xrb+xrlen
 ;  JSR PC, puts
 ;
 	.SBTTL PUTS - Write a string to the console
+str = 6
 puts::	MOV R0, -(SP)
 	MOV R1, -(SP)
-	MOV 6(SP), R0
+	JSR PC, clrxrb
+	MOV str(SP), R0
 	INC R0
 	MOVB (R0), R1
 	BIC #byteh, R1
@@ -74,10 +78,12 @@ puts::	MOV R0, -(SP)
 ;  JSR PC, putsnl
 ;
 	.SBTTL PUTSLN - Put a string followed by a newline to the console
+str = 6
 putsln::
 	MOV R0, -(SP)
 	MOV R1, -(SP)
-	MOV 6(SP), R0
+	JSR PC, clrxrb
+	MOV str(SP), R0
 	INC R0
 	MOVB (R0), R1
 	BIC #byteh, R1
@@ -101,7 +107,10 @@ putsln::
 ;  JSR PC, put
 ;
 	.SBTTL PUTLN - Put a text buffer followed by a newline to the console
-putln::	MOV buf(SP), @#xrb+xrlen
+buf = 4
+len = 2
+putln::	JSR PC, clrxrb
+	MOV buf(SP), @#xrb+xrlen
 	MOV buf(SP), @#xrb+xrbc
 	MOV len(SP), @#xrb+xrloc
 	CLRB @#xrb+xrci
@@ -236,9 +245,11 @@ clnup:	MOV (SP)+, R3		; Restore registers
 ;  JSR PC, gets
 ;
 	.SBTTL GETS - Get a string from the console
-gets::	MOV R0, -(SP)
+str = 6
+gets::	JSR PC, clrxrb
+	MOV R0, -(SP)
 	MOV R1, -(SP)
-	MOV 6(SP), R0
+	MOV str(SP), R0
 	MOVB (R0), R1
 	BIC #byteh, R1
 	ADD #2, R0
@@ -258,17 +269,4 @@ gets::	MOV R0, -(SP)
 	TST (SP)+
 	RTS PC
 ;
-;  Print message for unimplemented routines
-;  Debugging code.  Keep commented out unless
-;  actually needed.
-;
-;unimpl:	MOV #unln, -(SP)
-;	MOV #unimp, -(SP)
-;	JSR PC, put
-;	ADD #4, SP
-;	RTS PC
-
-;	.PSECT DATA
-;unimp:	.ASCII "<unimplemented>"
-;unln = . - unimp
 	.END
