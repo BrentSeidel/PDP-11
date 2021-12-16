@@ -3,7 +3,7 @@
 ;
 	.INCLUDE /MACROS.MAC/
 	.TITLE STRNUM - Routines to convert between strings and numbers
-	.IDENT "X0.00"
+	.IDENT "X00.01"
 ;
 ;  The data structure for a string is defined as follows:
 ;  str:  byte max - Maximum length of the string.  This should never change
@@ -13,7 +13,7 @@
 ;  Note that in general, if the destination is not large enough to hold
 ;  a string transfer, the destination will hold a truncated value.
 ;
-	.PSECT STR,SAV,CON,GBL
+	.PSECT STR,RO,CON,GBL,I
 ;
 ;  The following three functions convert a signed or unsigned 16 bit integer
 ;  to a string in octal, decimal, or hexidecimal representation.  They are

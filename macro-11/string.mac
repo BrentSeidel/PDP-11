@@ -13,7 +13,7 @@
 ;  Note that in general, if the destination is not large enough to hold
 ;  a string transfer, the destination will hold a truncated value.
 ;
-	.PSECT STR,SAV,CON,GBL,I
+	.PSECT STR,RO,CON,GBL,I
 
 	.SBTTL STRLEN - Get the length of a string
 ;  Called with the address of the string on the stack and returns

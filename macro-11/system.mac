@@ -8,7 +8,7 @@
 	.IDENT "X00.01"
 	.ENABL GBL
 ;
-	.PSECT SYS,SAV,CON,GBL,I
+	.PSECT SYS,RO,CON,GBL,I
 	.SBTTL CLRXRB - Clears the XRB
 ;
 ;  Clear the XRB and FIRQB.  It is useful to do this before
@@ -231,6 +231,20 @@ sleep::	JSR PC, clrxrb
 	.SLEEP
 	MOV (SP), 2(SP)
 	TST (SP)+
+	RTS PC
+;
+	.SBTTL INIT - Standard program initialization
+;  Perform standard program initialization.  Currently, this
+;  just copies some of the FIRQB contents into some globals
+;  for default values.
+;  Called as:
+;  JSR PC, init
+init::	MOV @#firqb+fqppn, defppn
+	MOV @#firqb+fqnam1, defnam
+	MOV @#firqb+fqnam1+2, defnam+2
+	MOV @#firqb+fqext, defext
+	MOV @#firqb+fqdev, defdev
+	MOV @#firqb+fqdevn, defdnm
 	RTS PC
 ;
 ;  String buffers for routines

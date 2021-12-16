@@ -7,7 +7,7 @@
 	.TITLE STR50 - Routines to convert between ASCII and RAD50
 	.IDENT "X00.01"
 ;
-	.PSECT STR,SAV,CON,GBL,I
+	.PSECT STR,RO,CON,GBL,I
 ;
 ;  Convert a string to RAD50.  This is passed a string and the first 3
 ;  characters are converted to a 16 bit word of RAD50.  Lower case

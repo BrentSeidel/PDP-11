@@ -7,7 +7,7 @@
 	.IDENT "X00.01"
 	.ENABL GBL
 ;
-	.PSECT FILE,SAV,CON,GBL,I
+	.PSECT FILE,RO,CON,GBL,I
 	.SBTTL PARSEF - Parse a filespec into the FIRQB
 ;
 ;  Parses a string containing a filespec and fills the appropriate
@@ -36,6 +36,31 @@ parsef::
 	MOV (SP)+, R0
 	MOV (SP), 2(SP)
 	TST (SP)+
+	RTS PC
+;
+	.SBTTL CHANCK - Check an I/O channel to see its status
+;  This simply does a UU.FCB call on the channel with subfunction 1.
+;  If no error is returned, the channel is open and a disk file.  If
+;  NODEVC is returned, the channel is open and not a disk file.  If
+;  NOTOPN is returned, the channel is not open.  If BSERR is returned,
+;  then the passed channel number is out of range.
+;  Called as:
+;  MOV chan, -(SP)
+;  JSR PC, chanck
+;  MOV (SP)+, result
+chan = 4
+chanck::
+	MOV R0, -(SP)
+	MOV chan(SP), R0
+	JSR PC, clrfqb
+	MOVB #UU.FCB, @#firqb+fqfun
+	MOVB #1, @#firqb+fqsizm
+	MOVB R0, @#firqb+fqfil
+	.UUO
+	MOVB @#firqb, R0
+	BIC #byteh, R0
+	MOV R0, chan(SP)
+	MOV (SP)+, R0
 	RTS PC
 ;
 	.END

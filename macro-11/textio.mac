@@ -8,7 +8,7 @@
 	.IDENT	"X00.00"
 	.ENABL GBL
 
-	.PSECT TEXTIO,SAV,CON,GBL
+	.PSECT TEXTIO,I,RO,CON,GBL
 ;
 ;  Here is a collection of routines to do output to the
 ;  console.

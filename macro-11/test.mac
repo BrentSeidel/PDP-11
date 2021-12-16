@@ -14,6 +14,7 @@
 	text dot, <.>
 	string str, 80.
 start::
+	JSR PC, init
 	BIS #flglz+flgsgn, flgnum
 	putsln #hello
 ;
@@ -23,66 +24,24 @@ cloop:	puts #prompt			; Ask for a string
 	upcase #str
 	sfindc #str, #32., R1
 	substr #str, #cmd, #0, R1
+	substr #str, #rest, R1, #0
+	trim #rest, ls=1
 ;
 ;  Check for commands
 ;
-	streq #cmd, #cexit		; Check for EXIT command
-	BNE 100$
-	JMP done
-100$:	substr #str, #rest, R1, #0
-	trim #rest, ls=1
-;
-	streq #cmd, #coct		; Check for OCTAL command
+	MOV #tblcmd, R0
+100$:	TST (R0)
 	BNE 101$
-	JMP octal
-;
-101$:	streq #cmd, #cdec		; Check for DEC command
-	BNE 102$
-	JMP deci
-;
-102$:	streq #cmd, #chex		; Check for HEX command
-	BNE 103$
-	JMP hexi
-;
-103$:	streq #cmd #clist		; Check for LIST command
-	BNE 104$
-	JMP list
-;
-104$:	streq #cmd, #cstack		; Check for STACK command
-	BNE 105$
-	JMP estack
-;
-105$:	streq #cmd, #cerr		; Check for ERROR command
-	BNE 106$
-	JMP eerr
-;
-106$:	streq #cmd, #cname		; Check for NAME command
-	BNE 107$
-	JMP ename
-;
-107$:	streq #cmd, #csleep		;  Check for SLEEP command
-	BNE 108$
-	JMP esleep
-;
-108$:	streq #cmd, #cstar		;  Check for STAR command
-	BNE 109$
-	JMP estar
-;
-109$:	streq #cmd, #cfirqb		;  Check for FIRQB command
-	BNE 110$
-	JMP efirqb
-;
-110$:	streq #cmd, #cfqerr		;  Check for FQERR command
-	BNE 111$
-	JMP efqerr
-;
-111$:	streq #cmd, #cparsf		;  Check for PARSE command
-	BNE 112$
-	JMP eparsf
+	JMP nocmd
+101$:	streq #cmd, (R0)+
+	BEQ 102$
+	TST (R0)+
+	BR 100$
+102$:	MOV (R0), PC
 ;
 ;  No recognized command given
 ;
-112$:	cpstr #firstw, #outbuf
+nocmd:	cpstr #firstw, #outbuf
 	appstr #cmd, #outbuf
 	appstr #vbar, #outbuf
 	putsln #outbuf
@@ -181,17 +140,61 @@ efirqb:	cpstr #thestr, #outbuf
 	putsln #outbuf
 	JMP cloop
 ;
-efqerr:	MOVB @#firqb, R0
-	BIC #byteh, R0
+efqerr:	MOV @#firqb, R0
 	geterr R0, #outbuf
 	putsln #outbuf
 	JMP cloop
 ;
 eparsf:	parsef #rest
-	JMP cloop
+	MOV @#firqb, R0
+	BEQ 1$
+	geterr R0, #outbuf
+	putsln #outbuf
+1$:	JMP cloop
 ;
 done:	JMP exit
 ;	.EXIT
+;
+efilst:	CLR R0
+100$:	MOV R0, R1
+	cpstr #chan, #outbuf
+	decstr #temp, R1
+	appstr #temp, #outbuf
+	appstr #is, #outbuf
+	MOV R1, -(SP)
+	JSR PC, chanck
+	MOV (SP)+, R1
+	CMPB #notopn, R1	; Check for not open
+	BNE 2$
+	appstr #nopn, #outbuf
+	BR 1$
+2$:	CMPB #nodevc, R1	; Check for not disk
+	BNE 3$
+	appstr #opn, #outbuf
+	BR 1$
+3$:	CMPB #bserr, R1		; Check for invalid chan
+	BNE 4$
+	appstr #inv, #outbuf
+	BR 1$
+4$:	TST R1
+	BEQ 5$
+	appstr #unk, #outbuf
+	decstr #temp, R1
+	appstr #temp, #outbuf
+	BR 1$	
+5$:	appstr #dsk, #outbuf
+1$:	putsln #outbuf
+	INC R0
+	CMP #16., R0
+	BNE 100$
+	JMP cloop
+	text chan, <Channel >
+	text is, < is >
+	text dsk <open as a disk file>
+	text opn <open an a non-disk file>
+	text nopn, <not open>
+	text inv, <an invalid channel>
+	text unk, <unknown status >
 ;
 ;  Prints a number in octal, decimal, or hex.  The number is
 ;  passed in R1.  This is done by building a string and then
@@ -260,5 +263,25 @@ putnm1:	BIS #flgsgn, flgnum
 	text cfirqb, <FIRQB>
 	text cfqerr, <FQERR>
 	text cparsf, <PARSE>
+	text cfilst, <FILE-LIST>
+;
+;  Command jump table
+;
+	.PSECT DATA,RW,D,LCL,REL,CON
+tblcmd:	.WORD cexit,done
+	.WORD coct,octal
+	.WORD cdec,deci
+	.WORD chex,hexi
+	.WORD clist,list
+	.WORD cstack,estack
+	.WORD cerr,eerr
+	.WORD cname,ename
+	.WORD csleep,esleep
+	.WORD cstar,estar
+	.WORD cfirqb,efirqb
+	.WORD cfqerr,efqerr
+	.WORD cparsf,eparsf
+	.WORD cfilst,efilst
+	.WORD 0
 ;
 	.END start

@@ -28,17 +28,32 @@ numtbl::
 numbuf::
 	.BLKB 16.
 ;
+;  This table is used for RAD50 conversion.
+;
+r50tbl::
+	.ASCII " ABCDEFGHIJKLMNOPQRSTUVWXYZ$.?0123456789"
+r50len ==: . - r50tbl
+;
 ;  Constant for a carriage return-line feed since this gets used
 ;  a lot.
 ;
 cr =: 13.
 lf =: 10.
-crlf::	.BYTE cr
-	.BYTE lf
+crlf::	.BYTE cr,lf
+;	.BYTE lf
 ;
 ;  Constants for high byte and low byte in octal
 ;
 bytel ==: 377
 byteh ==: 177400
-
+;
+;  Default values for files.  Upon start of a program, the
+;  program's filespec is in the FIRQB.  Parts of this should
+;  be copied here for later use.
+;
+defppn::	.WORD 0
+defnam::	.WORD 0,0
+defext::	.WORD 0
+defdev::	.WORD 0
+defdnm::	.WORD 0
 	.END
