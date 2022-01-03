@@ -55,6 +55,9 @@ The macros defined are:
 * setnam - Sets the program's name
 * sleep - Suspends processing for a specified number of seconds
 * parsef - Parse a filespec string into the FIRQB
+* chanck - Check status of an I/O channel
+* filbuf - Create and allocate space for an I/O buffer
+* close - Close an I/O channel
 
 ## STR50.MAC
 This contains routines to convert between strings and RAD50.  RAD50 is a

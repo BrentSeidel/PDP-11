@@ -40,7 +40,6 @@ r50len ==: . - r50tbl
 cr =: 13.
 lf =: 10.
 crlf::	.BYTE cr,lf
-;	.BYTE lf
 ;
 ;  Constants for high byte and low byte in octal
 ;
@@ -51,9 +50,26 @@ byteh ==: 177400
 ;  program's filespec is in the FIRQB.  Parts of this should
 ;  be copied here for later use.
 ;
+	.EVEN
 defppn::	.WORD 0
 defnam::	.WORD 0,0
 defext::	.WORD 0
 defdev::	.WORD 0
 defdnm::	.WORD 0
+;
+;  Data for I/O channels
+;
+chopen ==: 1	; Channel is open
+chblk  ==: 2	; Channel is a block type device,
+		; thus has a buffer.
+;
+;  Channel flags - Channel 0 is always open on the consol, unless
+;  job is detached.
+chflag::	.WORD chopen,0,0,0,0,0,0,0
+		.WORD 0,0,0,0,0,0,0,0
+;
+;  Pointers to buffers
+chbuff::	.WORD 0,0,0,0,0,0,0,0
+		.WORD 0,0,0,0,0,0,0,0
+;
 	.END

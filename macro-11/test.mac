@@ -70,11 +70,11 @@ nocmd:	cpstr #firstw, #outbuf
 	puts #msg4		; Print the string's max len
 	strmax #str, R0
 	putdec R0
-	JSR PC, newline
+	newline
 	puts #msg5		; Print the string's actual len
 	strlen #str, R0
 	putdec R0
-	JSR PC, newline
+	newline
 ;
 	JMP cloop
 ;
@@ -145,8 +145,16 @@ efqerr:	MOV @#firqb, R0
 	putsln #outbuf
 	JMP cloop
 ;
-eparsf:	parsef #rest
+eparsf:	parsef #1, #rest
 	MOV @#firqb, R0
+	BEQ 1$
+	geterr R0, #outbuf
+	putsln #outbuf
+1$:	JMP cloop
+;
+eclose:	strdec #rest, R1
+	close R1
+	MOVB @#firqb, R0
 	BEQ 1$
 	geterr R0, #outbuf
 	putsln #outbuf
@@ -161,9 +169,7 @@ efilst:	CLR R0
 	decstr #temp, R1
 	appstr #temp, #outbuf
 	appstr #is, #outbuf
-	MOV R1, -(SP)
-	JSR PC, chanck
-	MOV (SP)+, R1
+	chanck R1, R1
 	CMPB #notopn, R1	; Check for not open
 	BNE 2$
 	appstr #nopn, #outbuf
@@ -263,7 +269,10 @@ putnm1:	BIS #flgsgn, flgnum
 	text cfirqb, <FIRQB>
 	text cfqerr, <FQERR>
 	text cparsf, <PARSE>
-	text cfilst, <FILE-LIST>
+	text cfilst, <CHANNELS>
+	text copen, <OPEN>
+	text cclose, <CLOSE>
+	text cwrite, <WRITE>
 ;
 ;  Command jump table
 ;
@@ -282,6 +291,9 @@ tblcmd:	.WORD cexit,done
 	.WORD cfqerr,efqerr
 	.WORD cparsf,eparsf
 	.WORD cfilst,efilst
+	.WORD cclose,eclose
+	.WORD copen,nocmd
+	.WORD cwrite,nocmd
 	.WORD 0
 ;
-	.END start
+	.END start 

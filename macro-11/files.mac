@@ -11,18 +11,30 @@
 	.SBTTL PARSEF - Parse a filespec into the FIRQB
 ;
 ;  Parses a string containing a filespec and fills the appropriate
-;  fields in the FIRQB
+;  fields in the FIRQB.  If the usedef parameter is not zero, the saved
+;  default values are copied into the FIRQB before parsing.
 ;  Called as:
 ;  MOV str, -(SP)
+;  MOV usedef, -(SP)
 ;  JSR PC, parsef
-str = 6
+str = 8.
+usedef = 6
 parsef::
 	MOV R0, -(SP)
 	MOV R1, -(SP)
 	JSR PC, clrxrb
 	JSR PC, clrfqb
 ;
-	MOV str(SP), R0		; Get string
+	TST usedef(SP)		; Check if default values are used
+	BEQ 1$
+	MOV defppn, @#firqb+fqppn
+	MOV defnam, @#firqb+fqnam1
+	MOV defnam+2, @#firqb+fqnam1+2
+	MOV defext, @#firqb+fqext
+	MOV defdev, @#firqb+fqdev
+	MOV defdnm, @#firqb+fqdevn
+
+1$:	MOV str(SP), R0		; Get string
 	INC R0			; Point to string length
 	MOVB (R0), R1
 	BIC #byteh, R1
@@ -34,8 +46,8 @@ parsef::
 ;
 	MOV (SP)+, R1
 	MOV (SP)+, R0
-	MOV (SP), 2(SP)
-	TST (SP)+
+	MOV (SP), 4(SP)
+	ADD #4,SP
 	RTS PC
 ;
 	.SBTTL CHANCK - Check an I/O channel to see its status
@@ -61,6 +73,28 @@ chanck::
 	BIC #byteh, R0
 	MOV R0, chan(SP)
 	MOV (SP)+, R0
+	RTS PC
+;
+	.SBTTL CHCLOS - Close an I/O channel
+;  This does a CALFIP CLSFQ on the channel and updates other maintained
+;  data structures.
+;  Called as:
+;  MOV chan, -(SP)
+;  JSR PC, chclos
+chan = 4
+chclos::
+	MOV R0, -(SP)
+	JSR PC, clrfqb
+	MOV chan(SP), R0
+	ASL R0				; Use channel number times 2
+	MOVB #CLSFQ, @#firqb+fqfun	; Close function
+	MOV R0, @#firqb+fqfil
+	CALFIP
+	TSTB @#firqb			; Test for errors
+	BNE 1$
+	MOV #0, chflag(R0)		; Clear any channel flags
+	MOV #0, chbuff(R0)		; No more channel buffer
+1$:	MOV (SP)+, R0
 	RTS PC
 ;
 	.END

@@ -7,24 +7,52 @@
 ;  These are macros for the various textio routines
 ;
 	.SBTTL TEXTIO - Macros for console input and output
+.MACRO	newline chan
+.IF	NB chan
+	MOV chan, -(SP)
+.ENDC
+.IF	B chan
+	MOV #0, -(SP)
+.ENDC
+	JSR PC, newline
+.ENDM	newline
+
 .MACRO	put msg, len
 	MOV len, -(SP)
 	MOV msg, -(SP)
 	JSR PC, put
 .ENDM	put
 
-.MACRO	puts text
+.MACRO	puts text, chan
 	MOV text, -(SP)
+.IF	B chan
+	MOV #0, -(SP)
+.ENDC
+.IF	NB chan
+	MOV chan, -(SP)
+.ENDC
 	JSR PC, puts
 .ENDM	puts
 
-.MACRO	gets str
+.MACRO	gets str, chan
 	MOV str, -(SP)
+.IF	B chan
+	MOV #0, -(SP)
+.ENDC
+.IF	NB chan
+	MOV chan, -(SP)
+.ENDC
 	JSR PC, gets
 .ENDM	gets
 
-.MACRO	putsln text
+.MACRO	putsln text, chan
 	MOV text, -(SP)
+.IF	B chan
+	MOV #0, -(SP)
+.ENDC
+.IF	NB chan
+	MOV chan, -(SP)
+.ENDC
 	JSR PC, putsln
 .ENDM	putsln
 
@@ -302,9 +330,38 @@ lbl:	.BYTE $1
 ;
 ;  Parse a string into a file spec in the FIRQB
 ;
-.MACRO	parsef str
+.MACRO	parsef usedef,str
 	MOV str, -(SP)
+	MOV usedef, -(SP)
 	JSR PC, parsef
 .ENDM	parsef
+;
+;  Check if a channel is open or not.
+;
+.MACRO	chanck chan, stat
+	MOV chan, -(SP)
+	JSR PC, chanck
+	MOV (SP)+, stat
+.ENDM	chanck
+;
+;  Create a buffer for a channel.  This is a 512 byte buffer for block
+;  oriented devices.
+;
+.MACRO	filbuf name
+	.SAVE
+	.PSECT FILBUF,GBL,REL,CON,D,RW
+	.EVEN
+	.WORD 0		; Block in file (large file currently not supported)
+	.WORD 0		; Byte in block
+name:	.BLKW 256	; Buffer space
+	.RESTOR
+.ENDM	filbuf
+;
+;  Close a channel.
+;
+.MACRO	close chan
+	MOV chan, -(SP)
+	JSR PC, chclos
+.ENDM
 ;
 	.LIST

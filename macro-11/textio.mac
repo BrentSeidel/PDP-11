@@ -13,17 +13,25 @@
 ;  Here is a collection of routines to do output to the
 ;  console.
 ;
-;  Send a CR/LF to the console.  Called with no parameters.
+;  Send a CR/LF to the console.  Called with the channel number as a
+;  parameter.
+;  MOV chan -(SP)
 ;  JSR PC, newlin
 ;
-	.SBTTL NEWLIN - Print a newline (cr/lf) to the console
+	.SBTTL NEWLIN - Print a newline (cr/lf) to the specified channel
+chan = 4
 newlin::
+	MOV R0, -(SP)
+	MOV chan(SP), R0
 	JSR PC, clrxrb
 	MOV #2, @#xrb+xrlen
 	MOV #2, @#xrb+xrbc
 	MOV #crlf, @#xrb+xrloc
-	MOVB #0, @#xrb+xrci
+	MOVB R0, @#xrb+xrci
 	.WRITE
+	MOV (SP)+, R0
+	MOV (SP), 2(SP)
+	TST (SP)+
 	RTS PC
 ;
 ;  Put text to the console.  Called with the buffer address
@@ -45,13 +53,15 @@ put::	JSR PC, clrxrb
 	ADD #4, SP
 	RTS PC
 ;
-;  Put a string to the console.  Called with the base address
+;  Put a string to the specified channel.  Called with the base address
 ;  of the string structure.
 ;  MOV str, -(SP)
+;  MOV chan, -(SP)
 ;  JSR PC, puts
 ;
-	.SBTTL PUTS - Write a string to the console
-str = 6
+	.SBTTL PUTS - Write a string to the specified channel
+str = 8.
+chan = 6
 puts::	MOV R0, -(SP)
 	MOV R1, -(SP)
 	JSR PC, clrxrb
@@ -63,22 +73,25 @@ puts::	MOV R0, -(SP)
 	MOV R1, @#xrb+xrbc
 	INC R0
 	MOV R0, @#xrb+xrloc
-	CLRB @#xrb+xrci
+	MOV chan(SP), R1
+	MOVB R1, @#xrb+xrci
 	.WRITE
 ;
 	MOV (SP)+, R1
 	MOV (SP)+, R0
-	MOV (SP), 2(SP)
-	TST (SP)+
+	MOV (SP), 4(SP)
+	ADD #4, SP
 	RTS PC
 ;
-;  Put a string to the console followed by a newline.  Called
+;  Put a string to the specified channel followed by a newline.  Called
 ;  with the base address of the string structure.
 ;  MOV str, -(SP)
+;  MOV chan, -(SP)
 ;  JSR PC, putsnl
 ;
-	.SBTTL PUTSLN - Put a string followed by a newline to the console
-str = 6
+	.SBTTL PUTSLN - Put a string followed by a nl to the specified channel
+str = 8.
+chan = 6
 putsln::
 	MOV R0, -(SP)
 	MOV R1, -(SP)
@@ -91,20 +104,22 @@ putsln::
 	MOV R1, @#xrb+xrbc
 	INC R0
 	MOV R0, @#xrb+xrloc
-	CLRB @#xrb+xrci
+	MOV chan(SP), R1
+	MOVB R1,@#xrb+xrci
 	.WRITE
+	newline R1
 ;
 	MOV (SP)+, R1
 	MOV (SP)+, R0
-	MOV (SP), 2(SP)
-	TST (SP)+
-	JMP newline
+	MOV (SP), 4(SP)
+	ADD #4, SP
+	RTS PC
 ;
 ;  Put text followed by a newline to the console.  Called with
 ;  buffer address and length.
 ;  MOV len, -(SP)
 ;  MOV addr, -(SP)
-;  JSR PC, put
+;  JSR PC, putln
 ;
 	.SBTTL PUTLN - Put a text buffer followed by a newline to the console
 buf = 4
@@ -117,7 +132,7 @@ putln::	JSR PC, clrxrb
 	.WRITE
 	MOV (SP), 4(SP)
 	ADD #4, SP
-	JMP newline
+	newline #0
 	RTS PC
 ;
 ;  Numeric text output routines to print integers in octal, decimal, or
@@ -239,13 +254,14 @@ clnup:	MOV (SP)+, R3		; Restore registers
 	TST (SP)+
 	RTS PC
 ;
-;  Get a string from the console.  Called with a pointer to
+;  Get a string from the specified channel.  Called with a pointer to
 ;  the string data structure.
-;  MOV #str, -(SP)
+;  MOV str, -(SP)
 ;  JSR PC, gets
 ;
-	.SBTTL GETS - Get a string from the console
-str = 6
+	.SBTTL GETS - Get a string from the specified channel
+str = 8.
+chan = 6
 gets::	JSR PC, clrxrb
 	MOV R0, -(SP)
 	MOV R1, -(SP)
@@ -256,7 +272,8 @@ gets::	JSR PC, clrxrb
 	MOV R1, @#xrb+xrlen
 	CLR @#xrb+xrbc
 	MOV R0, @#xrb+xrloc
-	CLRB @#xrb+xrci
+	MOV chan(SP), R1	; Channel number
+	MOVB R1, @#xrb+xrci
 	CLR @#xrb+xrtime
 	CLR @#xrb+xrmod
 	.READ
@@ -265,8 +282,8 @@ gets::	JSR PC, clrxrb
 ;
 	MOV (SP)+, R1
 	MOV (SP)+, R0
-	MOV (SP), 2(SP)
-	TST (SP)+
+	MOV (SP), 4(SP)
+	ADD #4, SP
 	RTS PC
 ;
 	.END
